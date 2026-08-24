@@ -1,0 +1,1621 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>MeshPay — Payments without internet</title>
+<style>
+/* ============================================================
+   MeshPay — interactive visual demo
+   Single file. No dependencies. The animation is the product.
+   ============================================================ */
+
+:root{
+  --bg:#04060c;
+  --bg2:#070b14;
+  --ink:#eaf0ff;
+  --muted:#7f8fae;
+  --dim:#4d5a72;
+  --hair:rgba(125,160,215,.13);
+
+  --bt:#5c8cff;          /* bluetooth */
+  --bt-soft:rgba(92,140,255,.55);
+  --net:#2ff0c8;         /* internet */
+  --ok:#2fe08d;          /* settled */
+  --bad:#ff5a6a;         /* offline / failure */
+  --gold:#ffc861;        /* money */
+
+  --mono:ui-monospace,"SF Mono","Cascadia Mono","Segoe UI Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* ambient environment ------------------------------------------------ */
+#app{position:fixed;inset:0;overflow:hidden}
+#app::before{ /* deep atmosphere */
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(120% 85% at 72% 8%, rgba(47,240,200,.10), transparent 55%),
+    radial-gradient(95% 70% at 22% 92%, rgba(92,140,255,.11), transparent 60%),
+    radial-gradient(70% 60% at 50% 50%, rgba(20,30,55,.55), transparent 70%),
+    linear-gradient(180deg,#060a14 0%, #04060c 55%, #03050a 100%);
+}
+#app::after{ /* vignette + grain */
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:60;
+  background:radial-gradient(135% 105% at 50% 45%, transparent 52%, rgba(0,0,0,.42) 100%);
+}
+
+/* header ------------------------------------------------------------- */
+#brand{
+  position:absolute;left:34px;top:26px;z-index:30;
+  opacity:0;transform:translateY(-8px);
+  transition:opacity .9s ease,transform .9s cubic-bezier(.2,.8,.2,1);
+}
+#brand.on{opacity:1;transform:none}
+#brand .bn{
+  display:flex;align-items:center;gap:9px;
+  font-size:19px;font-weight:640;letter-spacing:-.02em;
+}
+#brand .dot{
+  width:9px;height:9px;border-radius:50%;
+  background:var(--net);box-shadow:0 0 14px var(--net);
+  animation:beat 2.6s ease-in-out infinite;
+}
+@keyframes beat{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
+#brand .bt{
+  margin-top:5px;font-family:var(--mono);font-size:9.5px;letter-spacing:.19em;
+  color:var(--dim);text-transform:uppercase;
+}
+
+/* scene tabs --------------------------------------------------------- */
+#tabs{
+  position:absolute;left:34px;top:84px;z-index:30;display:flex;gap:6px;
+  opacity:0;transition:opacity .8s ease .1s;
+}
+#tabs.on{opacity:1}
+.tab{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--dim);background:rgba(255,255,255,.02);
+  border:1px solid var(--hair);border-radius:999px;
+  padding:8px 15px;cursor:pointer;transition:all .3s ease;white-space:nowrap;
+}
+.tab:hover{color:var(--muted);border-color:rgba(125,160,215,.3)}
+.tab.sel{
+  color:var(--ink);border-color:rgba(92,140,255,.55);
+  background:linear-gradient(180deg,rgba(92,140,255,.16),rgba(92,140,255,.05));
+  box-shadow:0 0 22px -6px rgba(92,140,255,.6);
+}
+.tab .num{color:var(--bt);margin-right:7px;opacity:.85}
+
+/* flow rail ---------------------------------------------------------- */
+#flow{
+  position:absolute;left:50%;top:30px;transform:translateX(-50%);z-index:30;
+  display:flex;align-items:center;gap:0;opacity:0;transition:opacity .8s ease;
+}
+#flow.on{opacity:1}
+.fstep{
+  position:relative;display:flex;align-items:center;gap:7px;
+  font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--dim);padding:0 13px;transition:color .45s ease;white-space:nowrap;
+}
+.fstep .fd{
+  width:5px;height:5px;border-radius:50%;background:rgba(125,160,215,.22);
+  transition:all .45s ease;flex:none;
+}
+.fstep.done{color:var(--muted)}
+.fstep.done .fd{background:var(--bt);box-shadow:0 0 8px var(--bt-soft)}
+.fstep.live{color:var(--ink)}
+.fstep.live .fd{background:var(--net);box-shadow:0 0 16px var(--net);transform:scale(1.5)}
+.fstep.fin.done .fd,.fstep.fin.live .fd{background:var(--ok);box-shadow:0 0 16px var(--ok)}
+.fsep{width:20px;height:1px;background:rgba(125,160,215,.16);flex:none}
+
+/* stage -------------------------------------------------------------- */
+#stage{position:absolute;inset:0;z-index:10}
+#net{position:absolute;inset:0;width:100%;height:100%}
+#nodes{position:absolute;inset:0}
+
+/* nodes -------------------------------------------------------------- */
+.node{
+  position:absolute;left:0;top:0;
+  transform:translate(-50%,-50%) scale(var(--s,1));
+  transition:left .75s cubic-bezier(.6,0,.25,1), top .75s cubic-bezier(.6,0,.25,1),
+             opacity .5s ease, filter .5s ease;
+  will-change:left,top;
+}
+.node.spawn{animation:spawn .7s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes spawn{from{opacity:0;transform:translate(-50%,-50%) scale(calc(var(--s,1)*.4))}
+                 to{opacity:1;transform:translate(-50%,-50%) scale(var(--s,1))}}
+
+/* --- smartphone ----------------------------------------------------- */
+.phone .body{
+  position:relative;width:86px;height:172px;border-radius:19px;
+  background:linear-gradient(155deg,#39435c 0%,#1a2233 18%,#10161f 55%,#0b0f16 100%);
+  padding:3px;
+  box-shadow:
+    0 0 0 .5px rgba(180,205,245,.30),
+    0 26px 40px -18px rgba(0,0,0,.95),
+    0 4px 10px -4px rgba(0,0,0,.8),
+    inset 0 1px 0 rgba(255,255,255,.20);
+  transition:box-shadow .45s ease, transform .45s cubic-bezier(.2,1.4,.4,1);
+}
+.phone .body::before,.phone .body::after{ /* side buttons */
+  content:"";position:absolute;border-radius:2px;
+  background:linear-gradient(180deg,#39435c,#141a26);
+}
+.phone .body::before{right:-1.5px;top:44px;width:2px;height:26px}
+.phone .body::after{left:-1.5px;top:38px;width:2px;height:16px;
+  box-shadow:0 22px 0 #232b3d,0 44px 0 #232b3d}
+.phone .glass{
+  position:absolute;inset:3px;border-radius:16px;overflow:hidden;
+  background:linear-gradient(178deg,#0a1120 0%,#070c17 60%,#05080f 100%);
+  border:.5px solid rgba(255,255,255,.055);
+}
+.phone .glass::after{ /* screen reflection */
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:6;
+  background:linear-gradient(142deg,rgba(255,255,255,.075) 0%,transparent 34%,transparent 74%,rgba(255,255,255,.028) 100%);
+}
+.phone .island{
+  position:absolute;top:6px;left:50%;transform:translateX(-50%);
+  width:28px;height:6.5px;border-radius:5px;background:#03060c;z-index:5;
+  box-shadow:inset 0 0 0 .5px rgba(255,255,255,.06);
+}
+.phone .sbar{
+  position:absolute;top:5.5px;left:8px;right:8px;height:8px;z-index:4;
+  display:flex;align-items:center;justify-content:space-between;
+  font-family:var(--mono);font-size:5.5px;letter-spacing:.06em;color:var(--dim);
+}
+.phone .sig{display:flex;align-items:center;gap:2px}
+.phone .sig i{display:block;width:2px;background:currentColor;border-radius:1px;opacity:.35}
+.phone .sig i:nth-child(1){height:3px}
+.phone .sig i:nth-child(2){height:4.5px}
+.phone .sig i:nth-child(3){height:6px}
+.phone .sig i:nth-child(4){height:7.5px}
+.node.online .sig{color:var(--net)}
+.node.online .sig i{opacity:1}
+.node.offline .sig{color:var(--bad)}
+.node.offline .sig i{opacity:.25}
+.node.offline .sig i:nth-child(1){opacity:.7}
+
+/* screen content */
+.scr{
+  position:absolute;left:0;right:0;top:19px;bottom:8px;z-index:3;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;padding:6px 7px;text-align:center;
+}
+.s-label{
+  font-family:var(--mono);font-size:5.6px;letter-spacing:.17em;text-transform:uppercase;
+  color:var(--dim);line-height:1.5;
+}
+.s-big{font-size:19px;font-weight:620;letter-spacing:-.03em;line-height:1;color:var(--ink)}
+.s-big.rup{color:var(--gold);text-shadow:0 0 22px rgba(255,200,97,.45)}
+.s-big.small{font-size:10px;letter-spacing:-.01em}
+.s-chip{
+  font-family:var(--mono);font-size:5.4px;letter-spacing:.15em;text-transform:uppercase;
+  padding:3.5px 7px;border-radius:999px;line-height:1;
+  border:.5px solid rgba(125,160,215,.25);color:var(--muted);
+  background:rgba(125,160,215,.06);
+}
+.s-chip.hot{color:var(--gold);border-color:rgba(255,200,97,.45);background:rgba(255,200,97,.10);
+  box-shadow:0 0 16px -3px rgba(255,200,97,.55)}
+.s-chip.ok{color:var(--ok);border-color:rgba(47,224,141,.5);background:rgba(47,224,141,.11);
+  box-shadow:0 0 16px -3px rgba(47,224,141,.6)}
+.s-chip.bad{color:var(--bad);border-color:rgba(255,90,106,.45);background:rgba(255,90,106,.10)}
+.s-chip.bt{color:var(--bt);border-color:rgba(92,140,255,.5);background:rgba(92,140,255,.11);
+  box-shadow:0 0 16px -3px rgba(92,140,255,.6)}
+.s-btn{
+  font-family:var(--mono);font-size:6.5px;letter-spacing:.22em;font-weight:700;
+  color:#05131c;padding:6px 15px;border-radius:999px;line-height:1;
+  background:linear-gradient(180deg,#7de8c8,#2fe0a0);
+  box-shadow:0 0 22px -4px rgba(47,224,160,.85);
+  transition:transform .12s ease,filter .12s ease;cursor:pointer;
+}
+.s-btn.press{transform:scale(.88);filter:brightness(.8)}
+.s-dots{display:flex;gap:3px}
+.s-dots i{width:3px;height:3px;border-radius:50%;background:var(--bt);animation:sd 1.1s infinite}
+.s-dots i:nth-child(2){animation-delay:.15s}
+.s-dots i:nth-child(3){animation-delay:.3s}
+@keyframes sd{0%,60%,100%{opacity:.2;transform:translateY(0)}30%{opacity:1;transform:translateY(-2px)}}
+
+/* active phone glow */
+.node.act .body{
+  transform:translateY(-3px);
+  box-shadow:
+    0 0 0 .5px rgba(190,215,255,.55),
+    0 0 42px -6px var(--glow,rgba(92,140,255,.85)),
+    0 30px 45px -18px rgba(0,0,0,.95),
+    inset 0 1px 0 rgba(255,255,255,.22);
+}
+
+/* caption under node */
+.cap{
+  position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  margin-top:13px;display:flex;flex-direction:column;align-items:center;gap:5px;white-space:nowrap;
+}
+.cap-name{
+  font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.21em;
+  text-transform:uppercase;color:var(--ink);opacity:.92;
+}
+.cap-net{
+  font-family:var(--mono);font-size:7.5px;letter-spacing:.15em;text-transform:uppercase;
+  display:flex;align-items:center;gap:5px;color:var(--bad);
+}
+.cap-net .pip{width:4px;height:4px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
+.node.online .cap-net{color:var(--net)}
+.node.online .cap-net .pip{animation:beat 2s infinite}
+
+/* transient floating label */
+.float{
+  position:absolute;left:50%;bottom:100%;transform:translate(-50%,6px);
+  margin-bottom:14px;white-space:nowrap;opacity:0;pointer-events:none;
+  font-family:var(--mono);font-size:8px;letter-spacing:.18em;text-transform:uppercase;
+  padding:5px 10px;border-radius:999px;line-height:1;
+  background:rgba(6,10,20,.92);border:.5px solid rgba(125,160,215,.3);color:var(--muted);
+  backdrop-filter:blur(8px);transition:opacity .35s ease,transform .35s cubic-bezier(.2,1.3,.4,1);
+}
+.float.on{opacity:1;transform:translate(-50%,0)}
+.float.bt{color:var(--bt);border-color:rgba(92,140,255,.55);box-shadow:0 0 26px -8px var(--bt)}
+.float.ok{color:var(--ok);border-color:rgba(47,224,141,.55);box-shadow:0 0 26px -8px var(--ok)}
+.float.bad{color:var(--bad);border-color:rgba(255,90,106,.55);box-shadow:0 0 26px -8px var(--bad)}
+.float.gold{color:var(--gold);border-color:rgba(255,200,97,.55);box-shadow:0 0 26px -8px var(--gold)}
+
+/* --- shop ----------------------------------------------------------- */
+.shop .card{
+  position:relative;width:186px;border-radius:15px;overflow:hidden;
+  background:linear-gradient(180deg,rgba(18,25,40,.96),rgba(8,12,20,.96));
+  border:.5px solid rgba(125,160,215,.19);
+  box-shadow:0 30px 50px -22px rgba(0,0,0,.95),inset 0 1px 0 rgba(255,255,255,.07);
+  backdrop-filter:blur(10px);
+  transition:box-shadow .5s ease,border-color .5s ease;
+}
+.shop.act .card{border-color:rgba(47,224,141,.5);box-shadow:0 0 50px -12px rgba(47,224,141,.6),0 30px 50px -22px rgba(0,0,0,.95)}
+.shop .awn{height:7px;background:repeating-linear-gradient(90deg,#e0576a 0 11px,#0e1420 11px 22px);opacity:.72}
+.shop .inner{padding:14px 15px 15px}
+.shop .nm{font-size:13px;font-weight:620;letter-spacing:-.01em}
+.shop .sub{
+  margin-top:4px;font-family:var(--mono);font-size:7.5px;letter-spacing:.17em;
+  text-transform:uppercase;color:var(--dim);
+}
+.shop .term{
+  margin-top:12px;border-radius:9px;padding:11px 12px;
+  background:linear-gradient(180deg,#060b15,#04070e);
+  border:.5px solid rgba(125,160,215,.14);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;
+}
+.shop .term .tl{font-family:var(--mono);font-size:7px;letter-spacing:.19em;color:var(--dim);text-transform:uppercase}
+.shop .term .tv{font-size:15px;font-weight:640;letter-spacing:-.02em;color:var(--muted);transition:color .5s ease}
+.shop.paid .term{border-color:rgba(47,224,141,.45);box-shadow:inset 0 0 26px -8px rgba(47,224,141,.6)}
+.shop.paid .term .tv{color:var(--ok);text-shadow:0 0 20px rgba(47,224,141,.6)}
+.shop .noint{
+  margin-top:11px;display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--mono);font-size:7.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--bad);padding:5px 9px;border-radius:999px;
+  border:.5px solid rgba(255,90,106,.3);background:rgba(255,90,106,.07);
+}
+.shop .noint .pip{width:4px;height:4px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
+
+/* --- gateway -------------------------------------------------------- */
+.gw .card{
+  position:relative;width:168px;border-radius:15px;padding:15px 16px 14px;
+  background:linear-gradient(180deg,rgba(12,24,34,.95),rgba(6,11,18,.95));
+  border:.5px solid rgba(47,240,200,.26);
+  box-shadow:0 0 45px -18px rgba(47,240,200,.55),0 26px 45px -22px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.07);
+  backdrop-filter:blur(10px);text-align:center;
+  transition:box-shadow .55s ease,border-color .55s ease;
+}
+.gw.act .card{border-color:rgba(47,240,200,.75);box-shadow:0 0 70px -12px rgba(47,240,200,.85),0 26px 45px -22px rgba(0,0,0,.9)}
+.gw .cloud{margin:0 auto 9px;display:block;color:var(--net);opacity:.9}
+.gw .nm{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.22em;text-transform:uppercase}
+.gw .sub{margin-top:5px;font-family:var(--mono);font-size:7px;letter-spacing:.16em;color:var(--dim);text-transform:uppercase}
+.gw .ring{
+  position:absolute;inset:-1px;border-radius:15px;pointer-events:none;opacity:0;
+  border:1px solid var(--net);transition:opacity .3s ease;
+}
+.gw.act .ring{opacity:1;animation:gwring 1.6s ease-out infinite}
+@keyframes gwring{0%{transform:scale(1);opacity:.75}100%{transform:scale(1.16);opacity:0}}
+
+/* verify panel */
+#verify{
+  position:absolute;left:0;top:0;z-index:22;
+  transform:translate(-100%,-50%) scale(var(--s,1));transform-origin:right center;
+  opacity:0;pointer-events:none;transition:opacity .4s ease;
+  width:172px;padding:13px 14px;border-radius:12px;
+  background:rgba(6,11,18,.94);border:.5px solid rgba(47,240,200,.28);
+  box-shadow:0 0 40px -16px rgba(47,240,200,.6);backdrop-filter:blur(12px);
+}
+#verify.on{opacity:1}
+#verify .vh{
+  font-family:var(--mono);font-size:8px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--net);display:flex;align-items:center;gap:7px;margin-bottom:10px;
+}
+#verify .vh .sp{
+  width:8px;height:8px;border-radius:50%;border:1.5px solid var(--net);border-top-color:transparent;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+#verify .vr{
+  display:flex;align-items:center;gap:8px;padding:4px 0;
+  font-family:var(--mono);font-size:8px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--dim);opacity:0;transform:translateX(-6px);
+  transition:opacity .3s ease,transform .3s ease,color .3s ease;
+}
+#verify .vr.on{opacity:1;transform:none;color:var(--muted)}
+#verify .vr .ck{color:var(--ok);font-size:9px;opacity:0;transition:opacity .25s ease}
+#verify .vr.on .ck{opacity:1}
+
+/* --- crowd mini phone ----------------------------------------------- */
+.mini .body::before,.mini .body::after{display:none}
+.mini .body{
+  position:relative;width:26px;height:48px;border-radius:7px;
+  background:linear-gradient(155deg,#333d54,#11161f);padding:1.5px;
+  box-shadow:0 0 0 .5px rgba(160,190,235,.20),0 10px 16px -8px rgba(0,0,0,.9);
+  transition:box-shadow .4s ease,transform .4s ease;
+}
+.mini .glass{
+  position:absolute;inset:1.5px;border-radius:5.5px;
+  background:linear-gradient(180deg,#0a1120,#05080f);overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+.mini .pulse{width:5px;height:5px;border-radius:50%;background:var(--dim);transition:all .4s ease}
+.mini.online .pulse{background:var(--net);box-shadow:0 0 10px var(--net);animation:beat 2.4s infinite}
+.mini.offline .pulse{background:rgba(255,90,106,.5)}
+.mini.act .body{transform:translateY(-2px);
+  box-shadow:0 0 0 .5px rgba(190,215,255,.6),0 0 26px -4px var(--glow,var(--bt)),0 12px 18px -8px rgba(0,0,0,.9)}
+.mini .cap{margin-top:8px}
+.mini .cap-name{font-size:7px;letter-spacing:.16em}
+.mini .cap-net{font-size:6px}
+
+/* --- tower / stage props -------------------------------------------- */
+.prop .card{
+  border-radius:12px;padding:11px 14px;text-align:center;
+  background:linear-gradient(180deg,rgba(16,22,36,.9),rgba(7,11,18,.9));
+  border:.5px solid rgba(125,160,215,.16);backdrop-filter:blur(8px);
+  box-shadow:0 20px 36px -20px rgba(0,0,0,.9);
+}
+.prop .nm{font-family:var(--mono);font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.prop .sub{margin-top:5px;font-family:var(--mono);font-size:7px;letter-spacing:.15em;text-transform:uppercase;color:var(--bad);
+  display:flex;align-items:center;justify-content:center;gap:5px}
+.prop .sub .pip{width:4px;height:4px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor;
+  animation:flick 1.4s infinite}
+@keyframes flick{0%,100%{opacity:1}45%{opacity:.15}}
+.prop.stagebar .card{width:210px;border-color:rgba(92,140,255,.2)}
+.prop.stagebar .sub{color:var(--dim)}
+
+/* --- link badge --- */
+.llab{
+  position:absolute;left:0;top:0;z-index:8;pointer-events:none;white-space:nowrap;
+  transform:translate(-50%,-50%) scale(var(--s,1));
+  font-family:var(--mono);font-size:7.5px;letter-spacing:.21em;text-transform:uppercase;
+  color:rgba(150,180,230,.45);padding:4px 8px;border-radius:999px;line-height:1;
+  background:rgba(4,7,14,.92);border:.5px solid rgba(125,160,215,.14);
+  transition:color .35s ease,border-color .35s ease,box-shadow .35s ease,opacity .4s ease;
+}
+.llab.hot{color:var(--bt);border-color:rgba(92,140,255,.5);box-shadow:0 0 22px -6px var(--bt)}
+.llab.net{color:rgba(47,240,200,.55);border-color:rgba(47,240,200,.2)}
+.llab.net.hot{color:var(--net);border-color:rgba(47,240,200,.6);box-shadow:0 0 22px -6px var(--net)}
+.llab.dead{color:var(--bad);border-color:rgba(255,90,106,.45);box-shadow:none}
+
+/* --- packet --------------------------------------------------------- */
+#packet{
+  position:absolute;left:0;top:0;z-index:25;opacity:0;pointer-events:none;
+  transition:opacity .3s ease;
+  filter:drop-shadow(0 0 16px rgba(255,200,97,.75));
+}
+#packet.on{opacity:1}
+#packet .pk{
+  position:relative;width:38px;height:38px;border-radius:11px;
+  background:linear-gradient(150deg,#ffe0a0,#ffb545 45%,#ff9d2e);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 0 1px rgba(255,255,255,.4),inset 0 1px 0 rgba(255,255,255,.7),0 0 34px rgba(255,180,70,.7);
+  transition:background .45s ease,box-shadow .45s ease;
+}
+#packet .pk::before{ /* spin ring */
+  content:"";position:absolute;inset:-6px;border-radius:15px;
+  border:1px dashed rgba(255,200,97,.55);animation:spin 5.5s linear infinite;
+}
+#packet .lock{color:#4a2c00;display:block}
+#packet .plabel{
+  position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:11px;
+  font-family:var(--mono);font-size:7.5px;letter-spacing:.19em;text-transform:uppercase;
+  white-space:nowrap;color:var(--gold);
+  padding:4px 9px;border-radius:999px;background:rgba(6,10,20,.9);
+  border:.5px solid rgba(255,200,97,.4);
+}
+#packet.ok{filter:drop-shadow(0 0 20px rgba(47,224,141,.85))}
+#packet.ok .pk{background:linear-gradient(150deg,#b6ffdc,#3fe89b 45%,#20d986);
+  box-shadow:0 0 0 1px rgba(255,255,255,.45),inset 0 1px 0 rgba(255,255,255,.7),0 0 40px rgba(47,224,141,.8)}
+#packet.ok .pk::before{border-color:rgba(47,224,141,.6)}
+#packet.ok .lock{color:#004a2a}
+#packet.ok .plabel{color:var(--ok);border-color:rgba(47,224,141,.45)}
+#packet.held .pk{animation:heldp 1.5s ease-in-out infinite}
+@keyframes heldp{0%,100%{transform:scale(1)}50%{transform:scale(.9)}}
+
+/* --- banner --------------------------------------------------------- */
+#banner{
+  position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);z-index:45;
+  pointer-events:none;text-align:center;opacity:0;transition:opacity .45s ease;
+  padding:56px 130px;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(3,5,10,.95) 0%,rgba(3,5,10,.88) 52%,rgba(3,5,10,0) 100%);
+}
+#banner.on{opacity:1}
+#banner .bg{
+  font-size:clamp(26px,4.3vw,54px);font-weight:680;letter-spacing:-.035em;line-height:1.05;
+  animation:bpop .8s cubic-bezier(.16,1,.3,1) both;
+}
+#banner .bs{
+  margin-top:13px;font-family:var(--mono);font-size:10px;letter-spacing:.32em;
+  text-transform:uppercase;color:var(--muted);animation:bpop .8s .12s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes bpop{from{opacity:0;transform:translateY(16px) scale(.96);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+#banner.ok .bg{color:var(--ok);text-shadow:0 0 60px rgba(47,224,141,.6)}
+#banner.bad .bg{color:var(--bad);text-shadow:0 0 60px rgba(255,90,106,.5)}
+#banner.net .bg{color:var(--net);text-shadow:0 0 60px rgba(47,240,200,.55)}
+
+/* --- bottom UI ------------------------------------------------------ */
+#bottom{
+  position:absolute;left:0;right:0;bottom:0;z-index:40;
+  display:flex;flex-direction:column;align-items:center;gap:16px;
+  padding:0 24px 26px;opacity:0;transform:translateY(14px);
+  transition:opacity .8s ease,transform .8s cubic-bezier(.2,.8,.2,1);
+}
+#bottom.on{opacity:1;transform:none}
+#alert{
+  display:none;align-items:center;gap:11px;
+  font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--bad);padding:11px 20px;border-radius:999px;
+  border:.5px solid rgba(255,90,106,.45);background:rgba(255,90,106,.09);
+  box-shadow:0 0 40px -12px rgba(255,90,106,.8);
+  animation:alertIn .5s cubic-bezier(.16,1,.3,1) both;
+}
+#alert.on{display:flex}
+#alert .pip{width:6px;height:6px;border-radius:50%;background:currentColor;
+  box-shadow:0 0 10px currentColor;animation:flick 1.2s infinite;flex:none}
+#alert .sub{color:var(--muted);font-weight:400;letter-spacing:.13em}
+@keyframes alertIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+#status{
+  font-family:var(--mono);font-size:10px;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--muted);text-align:center;min-height:13px;transition:color .4s ease;
+}
+#status .hl{color:var(--net)}
+#caption{
+  font-size:13.5px;color:var(--muted);text-align:center;max-width:640px;line-height:1.55;
+  opacity:0;transition:opacity .6s ease;font-weight:400;
+}
+#caption.on{opacity:1}
+#caption b{color:var(--ink);font-weight:600}
+#controls{display:flex;gap:9px;flex-wrap:wrap;justify-content:center}
+.btn{
+  font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.17em;text-transform:uppercase;
+  color:var(--muted);background:rgba(255,255,255,.028);
+  border:.5px solid var(--hair);border-radius:999px;padding:12px 20px;cursor:pointer;
+  transition:all .28s ease;white-space:nowrap;
+}
+.btn:hover:not(:disabled){color:var(--ink);border-color:rgba(125,160,215,.38);background:rgba(255,255,255,.06);transform:translateY(-1px)}
+.btn:disabled{opacity:.28;cursor:not-allowed}
+.btn.primary{
+  color:#04140d;border-color:transparent;
+  background:linear-gradient(180deg,#8cf0cf,#2fe0a0);
+  box-shadow:0 0 34px -8px rgba(47,224,160,.9);
+}
+.btn.primary:hover:not(:disabled){filter:brightness(1.08);box-shadow:0 0 44px -6px rgba(47,224,160,1)}
+.btn.primary.hint{animation:hint 2.2s ease-in-out infinite}
+@keyframes hint{0%,100%{box-shadow:0 0 34px -8px rgba(47,224,160,.9)}50%{box-shadow:0 0 52px -2px rgba(47,224,160,1)}}
+.btn.danger:hover:not(:disabled){color:var(--bad);border-color:rgba(255,90,106,.45)}
+.btn.next{color:var(--net);border-color:rgba(47,240,200,.4);background:rgba(47,240,200,.07)}
+
+/* --- overlays: intro + aha ------------------------------------------ */
+.ov{position:absolute;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(90% 70% at 50% 50%,rgba(4,6,12,.86),rgba(3,5,10,.97));
+  transition:opacity .8s ease,backdrop-filter .8s ease;backdrop-filter:blur(3px)}
+.ov.hide{opacity:0;pointer-events:none;backdrop-filter:blur(0)}
+
+#intro{text-align:center;padding:0 24px}
+#intro .title{
+  font-size:clamp(52px,11vw,132px);font-weight:660;letter-spacing:-.055em;line-height:.92;
+  background:linear-gradient(178deg,#ffffff 12%,#9fc4ff 58%,#3f7ad4 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:rise 1.15s cubic-bezier(.16,1,.3,1) both;
+}
+#intro .tag{
+  margin-top:26px;display:flex;flex-direction:column;gap:9px;
+  font-size:clamp(14px,2.1vw,21px);font-weight:400;color:var(--muted);letter-spacing:-.005em;
+}
+#intro .tag span:nth-child(1){animation:rise 1s .5s cubic-bezier(.16,1,.3,1) both}
+#intro .tag span:nth-child(2){animation:rise 1s .78s cubic-bezier(.16,1,.3,1) both;color:var(--ink)}
+@keyframes rise{from{opacity:0;transform:translateY(26px);filter:blur(10px)}to{opacity:1;transform:none;filter:blur(0)}}
+#intro .line{
+  width:1px;height:0;margin:34px auto 0;background:linear-gradient(180deg,var(--net),transparent);
+  animation:grow 1.1s 1.15s ease-out forwards;
+}
+@keyframes grow{to{height:56px}}
+
+/* aha */
+#aha{padding:0 24px}
+#aha .wrap{position:relative;width:min(560px,90vw);height:430px}
+.side{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .55s ease,transform .7s cubic-bezier(.16,1,.3,1);transform:scale(.97)}
+.side.on{opacity:1;transform:none}
+.side.out{opacity:0;transform:scale(1.06) translateY(-14px)}
+.side .h{
+  font-family:var(--mono);font-size:11px;letter-spacing:.4em;text-transform:uppercase;margin-bottom:28px;
+}
+#ahaBad .h{color:var(--bad)}
+#ahaOk .h{color:var(--ok)}
+.chain{display:flex;flex-direction:column;align-items:center;gap:0}
+.ci{
+  opacity:0;transform:translateY(10px);transition:all .45s cubic-bezier(.16,1,.3,1);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+  padding:9px 20px;border-radius:999px;border:.5px solid var(--hair);color:var(--muted);
+  background:rgba(255,255,255,.025);white-space:nowrap;
+}
+.ci.on{opacity:1;transform:none}
+.ci.bad{color:var(--bad);border-color:rgba(255,90,106,.5);background:rgba(255,90,106,.09)}
+.ci.fail{color:#fff;background:linear-gradient(180deg,#ff6a78,#e0303f);border-color:transparent;
+  font-weight:700;box-shadow:0 0 40px -8px rgba(255,90,106,.9)}
+.ci.bt{color:var(--bt);border-color:rgba(92,140,255,.45);background:rgba(92,140,255,.09)}
+.ci.net{color:var(--net);border-color:rgba(47,240,200,.45);background:rgba(47,240,200,.09)}
+.ci.win{color:#04140d;background:linear-gradient(180deg,#8cf0cf,#2fe0a0);border-color:transparent;
+  font-weight:700;box-shadow:0 0 44px -8px rgba(47,224,160,.95)}
+.ar{width:1px;height:16px;background:rgba(125,160,215,.28);opacity:0;transition:opacity .35s ease}
+.ar.on{opacity:1}
+#ahaOk .ar.on{background:linear-gradient(180deg,rgba(92,140,255,.7),rgba(47,240,200,.7))}
+.shake{animation:shk .5s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes shk{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}
+  30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
+#sweep{
+  position:absolute;inset:-40px -60px;pointer-events:none;opacity:0;
+  background:linear-gradient(100deg,transparent 38%,rgba(47,240,200,.10) 46%,rgba(255,255,255,.75) 50%,rgba(47,240,200,.10) 54%,transparent 62%);
+}
+#sweep.go{animation:swp .95s cubic-bezier(.5,0,.2,1) both}
+@keyframes swp{0%{opacity:1;transform:translateX(-115%)}100%{opacity:0;transform:translateX(115%)}}
+
+#skip{
+  position:absolute;right:32px;bottom:30px;z-index:80;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--dim);background:none;border:none;cursor:pointer;transition:color .3s ease;
+}
+#skip:hover{color:var(--ink)}
+#skip.hide{opacity:0;pointer-events:none}
+
+/* responsive --------------------------------------------------------- */
+@media (max-width:820px){
+  #brand{left:18px;top:18px}
+  #tabs{left:18px;top:72px}
+  #flow{display:none}
+  .btn{padding:10px 14px;font-size:9px;letter-spacing:.13em}
+  #bottom{gap:12px;padding-bottom:18px}
+  #caption{font-size:12px}
+}
+@media (max-height:640px){
+  #flow{top:16px}
+  #aha .wrap{height:372px}
+  .ci{padding:7px 15px;font-size:9.5px}
+  .ar{height:11px}
+  .side .h{margin-bottom:18px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header id="brand">
+    <div class="bn"><span class="dot"></span>MeshPay</div>
+    <div class="bt">Offline payment mesh</div>
+  </header>
+
+  <nav id="tabs">
+    <button class="tab sel" data-scene="campus"><span class="num">01</span>Campus Shop</button>
+    <button class="tab" data-scene="crowd"><span class="num">02</span>Crowd Network</button>
+  </nav>
+
+  <div id="flow"></div>
+
+  <div id="stage">
+    <canvas id="net"></canvas>
+    <div id="nodes"></div>
+    <div id="verify">
+      <div class="vh"><span class="sp"></span><span>Verifying</span></div>
+      <div class="vr" data-i="0"><span class="ck">✓</span><span>Signature</span></div>
+      <div class="vr" data-i="1"><span class="ck">✓</span><span>Packet integrity</span></div>
+      <div class="vr" data-i="2"><span class="ck">✓</span><span>Duplicate check</span></div>
+    </div>
+    <div id="packet">
+      <div class="pk"><svg class="lock" width="15" height="17" viewBox="0 0 15 17" fill="none">
+        <rect x="1.2" y="7" width="12.6" height="9" rx="2.4" fill="currentColor"/>
+        <path d="M4.2 7V4.8a3.3 3.3 0 0 1 6.6 0V7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+      </svg></div>
+      <div class="plabel">Payment packet</div>
+    </div>
+  </div>
+
+  <div id="banner"><div class="bg"></div><div class="bs"></div></div>
+
+  <div id="bottom">
+    <div id="alert"></div>
+    <div id="status"></div>
+    <div id="caption"></div>
+    <div id="controls">
+      <button class="btn primary" id="bPay">Pay ₹250</button>
+      <button class="btn" id="bRelay">Add relay</button>
+      <button class="btn danger" id="bBridge">Disconnect bridge</button>
+      <button class="btn" id="bReplay">Replay</button>
+      <button class="btn next" id="bNext" style="display:none">Crowd network →</button>
+    </div>
+  </div>
+
+  <div class="ov" id="intro">
+    <div>
+      <div class="title">MeshPay</div>
+      <div class="tag">
+        <span>Your phone doesn't need internet.</span>
+        <span>Your payment just needs a path to it.</span>
+      </div>
+      <div class="line"></div>
+    </div>
+  </div>
+
+  <div class="ov hide" id="aha">
+    <div class="wrap">
+      <div id="sweep"></div>
+      <div class="side" id="ahaBad">
+        <div class="h">Without MeshPay</div>
+        <div class="chain">
+          <div class="ci">Buyer</div><div class="ar"></div>
+          <div class="ci bad">No internet</div><div class="ar"></div>
+          <div class="ci fail">Payment failed</div>
+        </div>
+      </div>
+      <div class="side" id="ahaOk">
+        <div class="h">With MeshPay</div>
+        <div class="chain">
+          <div class="ci">Buyer</div><div class="ar"></div>
+          <div class="ci bt">Bluetooth</div><div class="ar"></div>
+          <div class="ci">Relay phone</div><div class="ar"></div>
+          <div class="ci bt">Bluetooth</div><div class="ar"></div>
+          <div class="ci net">Internet bridge</div><div class="ar"></div>
+          <div class="ci net">MeshPay gateway</div><div class="ar"></div>
+          <div class="ci win">₹250 settled</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button id="skip">Skip intro</button>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* ── helpers ─────────────────────────────────────────────────────────── */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const ABORT = Symbol("abort");
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp  = (a, b, t) => a + (b - a) * t;
+const rnd   = (a, b) => a + Math.random() * (b - a);
+const easeInOut = t => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const easeOut   = t => 1 - Math.pow(1 - t, 3);
+
+const S = {
+  scene: null, relays: 1, bridge: true, running: false,
+  token: 0, wait: null, seenCrowd: false, intro: true
+};
+const MAX_CHAIN = 5;                 // buyer + relays + bridge
+
+const el = {
+  stage: $("#stage"), nodes: $("#nodes"), cv: $("#net"),
+  packet: $("#packet"), verify: $("#verify"), banner: $("#banner"),
+  status: $("#status"), caption: $("#caption"), flow: $("#flow"),
+  bPay: $("#bPay"), bRelay: $("#bRelay"), bBridge: $("#bBridge"),
+  bReplay: $("#bReplay"), bNext: $("#bNext"), alert: $("#alert")
+};
+const ctx = el.cv.getContext("2d");
+
+let W = 0, H = 0, DPR = 1, SC = 1;
+let NODES = {}, ORDER = [], LINKS = [];
+const dust = [], trail = [], rings = [];
+
+/* ── time control (abortable) ────────────────────────────────────────── */
+function sleep(ms) {
+  const tok = S.token;
+  return new Promise((res, rej) =>
+    setTimeout(() => (tok === S.token ? res() : rej(ABORT)), ms));
+}
+function tween(dur, fn, ease = easeInOut) {
+  const tok = S.token, t0 = performance.now();
+  return new Promise((res, rej) => {
+    (function step(now) {
+      if (tok !== S.token) return rej(ABORT);
+      const p = clamp((now - t0) / dur, 0, 1);
+      fn(ease(p), p);
+      p < 1 ? requestAnimationFrame(step) : res();
+    })(t0);
+  });
+}
+function abortRun() {
+  S.token++;
+  if (S.wait) { const w = S.wait; S.wait = null; w.rej(ABORT); }
+  S.running = false;
+}
+
+/* ── node factory ────────────────────────────────────────────────────── */
+function mk(cls, html) {
+  const d = document.createElement("div");
+  d.className = "node " + cls;
+  d.innerHTML = html;
+  el.nodes.appendChild(d);
+  return d;
+}
+const SIG = '<span class="sig"><i></i><i></i><i></i><i></i></span>';
+
+function addPhone(id, o) {
+  const d = mk("phone " + (o.online ? "online" : "offline"), `
+    <div class="body"><div class="glass">
+      <div class="island"></div>
+      <div class="sbar">${SIG}<span>9:41</span></div>
+      <div class="scr"></div>
+    </div></div>
+    <div class="cap">
+      <span class="cap-name">${o.name}</span>
+      <span class="cap-net"><span class="pip"></span><span class="nettxt">${o.online ? "5G · WI-FI" : "NO INTERNET"}</span></span>
+    </div>
+    <div class="float"></div>`);
+  return reg(id, { type: "phone", el: d, ...o });
+}
+function addMini(id, o) {
+  const d = mk("phone mini " + (o.online ? "online" : "offline"), `
+    <div class="body"><div class="glass"><span class="pulse"></span></div></div>
+    ${o.name ? `<div class="cap"><span class="cap-name">${o.name}</span>${
+        o.online ? '<span class="cap-net"><span class="pip"></span><span class="nettxt">5G</span></span>' : ""
+      }</div>` : ""}
+    <div class="float"></div>`);
+  return reg(id, { type: "mini", el: d, ...o });
+}
+function addShop(id, o) {
+  const d = mk("shop", `
+    <div class="card">
+      <div class="awn"></div>
+      <div class="inner">
+        <div class="nm">${o.name}</div>
+        <div class="sub">${o.sub}</div>
+        <div class="term"><span class="tl">Terminal</span><span class="tv">Waiting…</span></div>
+        <div class="noint"><span class="pip"></span>No internet</div>
+      </div>
+    </div>
+    <div class="float"></div>`);
+  return reg(id, { type: "shop", el: d, ...o });
+}
+function addGateway(id, o) {
+  const d = mk("gw", `
+    <div class="card">
+      <div class="ring"></div>
+      <svg class="cloud" width="42" height="24" viewBox="0 0 42 24" fill="none">
+        <path d="M11 21h20a7 7 0 0 0 1-13.9A9 9 0 0 0 14.4 6 6.5 6.5 0 0 0 11 21Z"
+              stroke="currentColor" stroke-width="1.3" fill="rgba(47,240,200,.07)"/>
+      </svg>
+      <div class="nm">MeshPay Gateway</div>
+      <div class="sub">Settlement · cloud</div>
+    </div>
+    <div class="float"></div>`);
+  return reg(id, { type: "gw", el: d, ...o });
+}
+function addProp(id, o) {
+  const d = mk("prop " + (o.cls || ""), `
+    <div class="card"><div class="nm">${o.name}</div>
+    ${o.sub ? `<div class="sub">${o.pip !== false ? '<span class="pip"></span>' : ""}${o.sub}</div>` : ""}</div>
+    <div class="float"></div>`);
+  return reg(id, { type: "prop", el: d, ...o });
+}
+function reg(id, n) { n.id = id; NODES[id] = n; ORDER.push(id); return n; }
+
+const FT = 112;                       // reserved for brand + flow rail
+let PADB = 255;                       // reserved for captions + bottom UI
+const fy = f => FT + f * Math.max(170, H - FT - PADB);
+const pos = id => { const n = NODES[id]; return { x: n.x * W, y: fy(n.y) }; };
+function link(a, b, type, o = {}) {
+  const L = { a, b, type, e: 0, off: 0, ...o };
+  if (L.label) {
+    const d = document.createElement("div");
+    d.className = "llab" + (type === "net" ? " net" : "");
+    d.textContent = L.label;
+    el.nodes.appendChild(d);
+    L.el = d;
+  }
+  LINKS.push(L);
+}
+const findLink = (a, b) => LINKS.find(l => (l.a === a && l.b === b) || (l.a === b && l.b === a));
+
+/* ── layout ──────────────────────────────────────────────────────────── */
+function qbez(p0, p1, p2, t) {
+  const u = 1 - t;
+  return { x: u * u * p0.x + 2 * u * t * p1.x + t * t * p2.x,
+           y: u * u * p0.y + 2 * u * t * p1.y + t * t * p2.y };
+}
+function chainIds() {
+  const c = ["buyer"];
+  for (let i = 0; i < S.relays; i++) c.push("r" + i);
+  c.push("bridge");
+  return c;
+}
+function layout() {
+  if (S.scene === "campus") {
+    const c = chainIds(), n = c.length;
+    const P0 = { x: .285, y: 1 }, C = { x: .445, y: .40 }, P2 = { x: .725, y: .40 };
+    c.forEach((id, i) => {
+      const t = n === 1 ? 0 : i / (n - 1);
+      const p = qbez(P0, C, P2, t);
+      Object.assign(NODES[id], p);
+    });
+  }
+  ORDER.forEach(id => {
+    const n = NODES[id];
+    n.el.style.left = (n.x * W) + "px";
+    n.el.style.top  = fy(n.y) + "px";
+  });
+  LINKS.forEach(l => {
+    if (!l.el || !NODES[l.a] || !NODES[l.b]) return;
+    const a = pos(l.a), b = pos(l.b);
+    l.el.style.left = ((a.x + b.x) / 2) + "px";
+    l.el.style.top  = ((a.y + b.y) / 2) + "px";
+  });
+  if (NODES.gateway) {
+    const g = pos("gateway");
+    // keep the verify card clear of the flow rail above and the node below it
+    const vh = el.verify.offsetHeight * SC;
+    const anchor = NODES.bridge || NODES.c14;
+    const ceil = anchor ? fy(anchor.y) - (anchor.type === "mini" ? 30 : 88) * SC - vh / 2 - 14 : H;
+    const cy = Math.max(56 + vh / 2, Math.min(g.y - vh * .18, ceil));
+    el.verify.style.left = (g.x - (84 * SC + 26)) + "px";
+    el.verify.style.top  = cy + "px";
+  }
+}
+function resize() {
+  W = el.stage.clientWidth; H = el.stage.clientHeight;
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  el.cv.width = W * DPR; el.cv.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  SC = clamp(Math.min(W / 1280, H / 760), .58, 1.06);
+  document.documentElement.style.setProperty("--s", SC);
+  layout();
+}
+window.addEventListener("resize", resize);
+
+/* ── canvas render ───────────────────────────────────────────────────── */
+function floor() {
+  const hz = H * .30, vx = W * .5, vy = hz - H * .18;
+  ctx.save(); ctx.lineWidth = 1;
+  for (let i = -12; i <= 12; i++) {
+    ctx.strokeStyle = `rgba(96,132,205,${.075 * (1 - Math.abs(i) / 15)})`;
+    ctx.beginPath(); ctx.moveTo(vx, vy); ctx.lineTo(W * .5 + i * (W / 8), H + 60); ctx.stroke();
+  }
+  for (let i = 1; i <= 13; i++) {
+    const t = i / 13, y = hz + (H - hz) * Math.pow(t, 2.3);
+    ctx.strokeStyle = `rgba(96,132,205,${.025 + .07 * t})`;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  ctx.restore();
+}
+const COL = {
+  bt:   [92, 140, 255],
+  net:  [47, 240, 200],
+  ok:   [47, 224, 141],
+  dead: [255, 90, 106],
+  gold: [255, 200, 97],
+  weak: [110, 135, 180]
+};
+function rgba(c, a) { return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
+
+const RAD = { phone: 52, mini: 21, shop: 96, gw: 86, prop: 78 };
+function trim(a, b, ra, rb) {
+  const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1;
+  const k = Math.min(1, (d - 10) / (ra + rb));   // never invert a short strand
+  const ux = dx / d, uy = dy / d;
+  return [{ x: a.x + ux * ra * k, y: a.y + uy * ra * k },
+          { x: b.x - ux * rb * k, y: b.y - uy * rb * k }];
+}
+function drawLinks(dt) {
+  LINKS.forEach(l => {
+    if (!NODES[l.a] || !NODES[l.b]) return;
+    const [a, b] = trim(pos(l.a), pos(l.b),
+      (RAD[NODES[l.a].type] || 50) * SC, (RAD[NODES[l.b].type] || 50) * SC);
+    const dead = l.type === "net" && !S.bridge && l.a === "bridge";
+    const base = dead ? COL.dead : (l.type === "net" ? COL.net : (l.type === "weak" ? COL.weak : COL.bt));
+    const e = l.e;
+    l.off -= dt * .022 * (1 + e * 6);
+
+    ctx.save();
+    ctx.lineCap = "round";
+    // base strand
+    ctx.setLineDash(l.type === "net" && !dead ? [] : [3, 7]);
+    ctx.lineDashOffset = l.off;
+    ctx.lineWidth = l.type === "net" ? 1.8 : 1.5;
+    ctx.strokeStyle = rgba(base, (l.type === "weak" ? .30 : .46) + e * .45);
+    ctx.shadowBlur = l.type === "weak" ? 4 : 7;
+    ctx.shadowColor = rgba(base, .40);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+
+    // energised overlay
+    if (e > .01) {
+      ctx.setLineDash([]);
+      ctx.globalCompositeOperation = "lighter";
+      ctx.shadowBlur = 22 * e; ctx.shadowColor = rgba(base, .9);
+      ctx.lineWidth = 1.5 + e * 2.2;
+      ctx.strokeStyle = rgba(base, .30 * e);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+    ctx.restore();
+
+    // uplink beads on live internet link
+    if (l.type === "net" && !dead && e > .05) {
+      const beads = 4;
+      for (let i = 0; i < beads; i++) {
+        const t = ((performance.now() / 900 + i / beads) % 1);
+        const x = lerp(a.x, b.x, t), y = lerp(a.y, b.y, t);
+        ctx.save(); ctx.globalCompositeOperation = "lighter";
+        ctx.fillStyle = rgba(base, .55 * e * Math.sin(Math.PI * t));
+        ctx.beginPath(); ctx.arc(x, y, 2.1, 0, 7); ctx.fill(); ctx.restore();
+      }
+    }
+    if (l.el) {
+      const hot = l.e > .25;
+      if (l._hot !== hot) { l._hot = hot; l.el.classList.toggle("hot", hot); }
+      if (l.type === "net" && l._dead !== dead) {
+        l._dead = dead;
+        l.el.classList.toggle("dead", dead);
+        l.el.textContent = dead ? "No internet" : "Internet";
+      }
+    }
+    l.e = Math.max(0, l.e - dt * .0011);
+  });
+}
+function drawRings(dt) {
+  for (let i = rings.length - 1; i >= 0; i--) {
+    const r = rings[i];
+    r.t += dt / r.life;
+    if (r.t >= 1) { rings.splice(i, 1); continue; }
+    const p = easeOut(r.t);
+    ctx.save(); ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = rgba(r.c, (1 - r.t) * .5);
+    ctx.lineWidth = 1.4 * (1 - r.t * .5);
+    ctx.beginPath(); ctx.arc(r.x, r.y, 8 + p * r.r, 0, 7); ctx.stroke();
+    ctx.restore();
+  }
+}
+function drawTrail(dt) {
+  for (let i = trail.length - 1; i >= 0; i--) {
+    const p = trail[i];
+    p.life -= dt / 620; p.x += p.vx * dt * .04; p.y += p.vy * dt * .04;
+    if (p.life <= 0) { trail.splice(i, 1); continue; }
+    ctx.save(); ctx.globalCompositeOperation = "lighter";
+    ctx.fillStyle = rgba(p.c, p.life * .6);
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r * p.life, 0, 7); ctx.fill(); ctx.restore();
+  }
+}
+function drawDust(dt) {
+  ctx.save(); ctx.globalCompositeOperation = "lighter";
+  dust.forEach(d => {
+    d.y -= d.v * dt * .012; d.x += Math.sin((performance.now() + d.o) / 3200) * .09;
+    if (d.y < -10) { d.y = H + 10; d.x = Math.random() * W; }
+    ctx.fillStyle = `rgba(140,175,235,${d.a})`;
+    ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 7); ctx.fill();
+  });
+  ctx.restore();
+}
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(48, now - last); last = now;
+  ctx.clearRect(0, 0, W, H);
+  floor(); drawDust(dt); drawLinks(dt); drawRings(dt); drawTrail(dt);
+  requestAnimationFrame(frame);
+}
+function seedDust() {
+  dust.length = 0;
+  for (let i = 0; i < 70; i++)
+    dust.push({ x: Math.random() * 1600, y: Math.random() * 900, r: rnd(.5, 1.5),
+                a: rnd(.05, .22), v: rnd(.3, 1.1), o: Math.random() * 9000 });
+}
+
+/* ── visual primitives ───────────────────────────────────────────────── */
+function ring(id, c = COL.bt, r = 70, life = 900) {
+  const p = pos(id); rings.push({ x: p.x, y: p.y, c, r, life, t: 0 });
+}
+function pulse(id, glow) {
+  const n = NODES[id]; if (!n) return;
+  n.el.style.setProperty("--glow", glow || rgba(COL.bt, .85));
+  n.el.classList.add("act");
+  clearTimeout(n._t);
+  n._t = setTimeout(() => n.el.classList.remove("act"), 1400);
+}
+function hold(id, on, glow) {
+  const n = NODES[id]; if (!n) return;
+  n.el.style.setProperty("--glow", glow || rgba(COL.bt, .85));
+  clearTimeout(n._t);
+  n.el.classList.toggle("act", !!on);
+}
+function float(id, text, tone = "", ms = 1800) {
+  const n = NODES[id]; if (!n) return;
+  const f = n.el.querySelector(".float"); if (!f) return;
+  f.className = "float on " + tone; f.textContent = text;
+  clearTimeout(n._f);
+  if (ms) n._f = setTimeout(() => f.classList.remove("on"), ms);
+}
+function clearFloats() {
+  $$(".float").forEach(f => f.classList.remove("on"));
+}
+function screen(id, o) {
+  const n = NODES[id]; if (!n || n.type !== "phone" || n.mini) return;
+  const s = n.el.querySelector(".scr"); if (!s) return;
+  s.innerHTML = [
+    o.label ? `<div class="s-label">${o.label}</div>` : "",
+    o.big   ? `<div class="s-big ${o.bigCls || ""}">${o.big}</div>` : "",
+    o.dots  ? `<div class="s-dots"><i></i><i></i><i></i></div>` : "",
+    o.btn   ? `<div class="s-btn">${o.btn}</div>` : "",
+    o.chip  ? `<div class="s-chip ${o.chipCls || ""}">${o.chip}</div>` : ""
+  ].join("");
+}
+function setOnline(id, on) {
+  const n = NODES[id]; if (!n) return;
+  n.online = on;
+  n.el.classList.toggle("online", on);
+  n.el.classList.toggle("offline", !on);
+  const t = n.el.querySelector(".nettxt");
+  if (t) t.textContent = on ? "5G · WI-FI" : "NO INTERNET";
+}
+function setStatus(t) { el.status.innerHTML = t; }
+function banner(big, sub = "", tone = "") {
+  el.banner.className = "on " + tone;
+  $(".bg", el.banner).textContent = big;
+  $(".bs", el.banner).textContent = sub;
+  // restart entry animation
+  $$("#banner .bg, #banner .bs").forEach(n => { n.style.animation = "none"; void n.offsetWidth; n.style.animation = ""; });
+}
+const hideBanner = () => el.banner.classList.remove("on");
+function alertOn(main, sub) {
+  el.alert.innerHTML = `<span class="pip"></span><span>${main}</span>` +
+                       (sub ? `<span class="sub">${sub}</span>` : "");
+  el.alert.classList.add("on");
+  el.alert.style.animation = "none"; void el.alert.offsetWidth; el.alert.style.animation = "";
+}
+const alertOff = () => el.alert.classList.remove("on");
+
+/* ── packet ──────────────────────────────────────────────────────────── */
+let pkScale = 1;
+function packetAt(x, y, s = 1) {
+  pkScale = s;
+  el.packet.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%) scale(${SC * s})`;
+}
+function showPacket(id, mode = "") {
+  const p = pos(id);
+  el.packet.className = "on " + mode;
+  $(".plabel", el.packet).textContent = mode === "ok" ? "Settlement receipt" : "Payment packet";
+  packetAt(p.x, p.y, .2);
+  requestAnimationFrame(() => tween(420, t => packetAt(p.x, p.y, lerp(.2, 1, t))).catch(() => {}));
+}
+const hidePacket = () => { el.packet.className = ""; };
+
+function emit(x, y, c) {
+  for (let i = 0; i < 2; i++)
+    trail.push({ x: x + rnd(-3, 3), y: y + rnd(-3, 3), vx: rnd(-.3, .3), vy: rnd(-.3, .3),
+                 r: rnd(1.6, 4.2), life: 1, c });
+}
+
+async function hop(from, to, o = {}) {
+  const a = pos(from), b = pos(to);
+  const kind = o.kind || "bt";
+  const col  = o.col || (kind === "net" ? COL.net : (o.ok ? COL.ok : [255, 190, 90]));
+  const dur  = o.dur || 1050;
+  const lk   = findLink(from, to);
+  const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
+  const nx = -dy / len, ny = dx / len;
+  const lift = (kind === "net" ? 0 : (o.lift ?? .13)) * len * (a.y > b.y ? 1 : -1);
+
+  ring(from, kind === "net" ? COL.net : COL.bt, 90, 900);
+  pulse(from, rgba(col, .8));
+  if (lk) lk.e = 1;
+
+  await tween(dur, t => {
+    const arc = Math.sin(Math.PI * t) * lift;
+    const x = a.x + dx * t + nx * arc, y = a.y + dy * t + ny * arc;
+    packetAt(x, y, 1 + Math.sin(Math.PI * t) * .16);
+    emit(x, y, col);
+    if (lk) lk.e = Math.max(lk.e, .55 + .45 * Math.sin(Math.PI * t));
+  }, o.ease || easeInOut);
+
+  pulse(to, rgba(col, .85));
+  ring(to, kind === "net" ? COL.net : COL.bt, 60, 700);
+}
+
+/* ── flow rail ───────────────────────────────────────────────────────── */
+function buildFlow() {
+  const hops = chainIds().length - 1;
+  const steps = ["Offline pay"];
+  for (let i = 0; i < hops; i++) steps.push("BT hop " + (i + 1));
+  steps.push("Internet"); steps.push("Settled");
+  el.flow.innerHTML = steps.map((s, i) =>
+    `${i ? '<span class="fsep"></span>' : ""}<span class="fstep${i === steps.length - 1 ? " fin" : ""}" data-i="${i}"><span class="fd"></span>${s}</span>`
+  ).join("");
+}
+function flowStep(i) {
+  $$(".fstep", el.flow).forEach(s => {
+    const k = +s.dataset.i;
+    s.classList.toggle("done", k < i);
+    s.classList.toggle("live", k === i);
+  });
+}
+const flowReset = () => $$(".fstep", el.flow).forEach(s => s.classList.remove("done", "live"));
+
+/* ── scenes ──────────────────────────────────────────────────────────── */
+function clearScene() {
+  abortRun();
+  el.nodes.innerHTML = "";
+  NODES = {}; ORDER = []; LINKS.length = 0;
+  trail.length = 0; rings.length = 0;
+  hidePacket(); hideBanner(); alertOff(); el.verify.classList.remove("on");
+  el.caption.classList.remove("on");
+  flowReset();
+}
+
+/* ---------- scene 1 : campus ---------- */
+function buildCampus() {
+  clearScene();
+  S.scene = "campus"; PADB = 255;
+  addShop("shop", { name: "Campus Shop", sub: "Stall 12 · Gate B", x: .115, y: .60 });
+  addPhone("buyer", { name: "Buyer", online: false });
+  for (let i = 0; i < S.relays; i++) addPhone("r" + i, { name: "Relay " + (i + 1), online: false });
+  addPhone("bridge", { name: "Bridge", online: S.bridge });
+  addGateway("gateway", { x: .875, y: 0 });
+
+  const c = chainIds();
+  link("shop", "buyer", "weak", { tap: true });
+  for (let i = 0; i < c.length - 1; i++) link(c[i], c[i + 1], "bt", { label: "Bluetooth" });
+  link("bridge", "gateway", "net", { label: "Internet" });
+
+  layout();
+  idleCampus();
+  buildFlow();
+  el.nodes.querySelectorAll(".node").forEach((n, i) => {
+    n.classList.add("spawn"); n.style.animationDelay = (i * 70) + "ms";
+    setTimeout(() => { n.classList.remove("spawn"); n.style.animationDelay = ""; }, 900 + i * 70);
+  });
+}
+function idleCampus() {
+  screen("buyer", { label: "Campus Shop", big: "₹250", bigCls: "rup", btn: "Pay" });
+  chainIds().slice(1, -1).forEach(id => screen(id, { label: "MeshPay", big: "Idle", bigCls: "small", chip: "Relay ready" }));
+  screen("bridge", S.bridge
+    ? { label: "MeshPay", big: "Online", bigCls: "small", chip: "Bridge ready", chipCls: "ok" }
+    : { label: "MeshPay", big: "Offline", bigCls: "small", chip: "No internet", chipCls: "bad" });
+  const sh = NODES.shop;
+  sh.el.classList.remove("paid");
+  $(".tl", sh.el).textContent = "Terminal";
+  $(".tv", sh.el).textContent = "Waiting…";
+  clearFloats();
+}
+
+/* ---------- scene 2 : crowd ---------- */
+const CROWD = [
+  ["c1", .335, .70], ["c2", .295, .565], ["c3", .415, .795], ["c4", .455, .625],
+  ["c5", .375, .465], ["c6", .525, .735], ["c7", .560, .535], ["c8", .495, .385],
+  ["c9", .625, .675], ["c10", .650, .455], ["c11", .705, .755], ["c12", .720, .570],
+  ["c13", .790, .680], ["c14", .820, .440], ["c15", .680, .335], ["c16", .580, .285]
+];
+const CROWD_ONLINE = ["c14", "c16"];
+const CROWD_ROUTE  = ["cbuyer", "c1", "c4", "c7", "c12", "c14"];
+
+function buildCrowd() {
+  clearScene();
+  S.scene = "crowd"; PADB = 165;
+  addProp("tower", { name: "Cell tower", sub: "Network congested", x: .105, y: .155 });
+  addProp("stagebar", { name: "Main stage", sub: "18,400 people", pip: false, x: .43, y: .105, cls: "stagebar" });
+  addShop("stall", { name: "Food Stall", sub: "Gate C · Row 4", x: .105, y: .60 });
+  addPhone("cbuyer", { name: "Buyer", online: false, x: .225, y: .82 });
+  CROWD.forEach(([id, x, y]) => addMini(id, {
+    x, y, online: CROWD_ONLINE.includes(id),
+    name: CROWD_ONLINE.includes(id) ? "Has internet" : ""
+  }));
+  addGateway("gateway", { x: .885, y: .215 });
+
+  // ambient proximity mesh
+  const all = ["cbuyer", ...CROWD.map(c => c[0])];
+  for (let i = 0; i < all.length; i++)
+    for (let j = i + 1; j < all.length; j++) {
+      const A = NODES[all[i]], B = NODES[all[j]];
+      const d = Math.hypot((A.x - B.x) * 1.6, A.y - B.y);
+      if (d < .235) link(all[i], all[j], "weak");
+    }
+  for (let i = 0; i < CROWD_ROUTE.length - 1; i++) {
+    const l = findLink(CROWD_ROUTE[i], CROWD_ROUTE[i + 1]);
+    if (l) l.type = "bt"; else link(CROWD_ROUTE[i], CROWD_ROUTE[i + 1], "bt");
+  }
+  link("stall", "cbuyer", "weak");
+  link("c14", "gateway", "net", { label: "Internet" });
+
+  layout();
+  idleCrowd();
+  el.caption.innerHTML = "Connectivity becomes a property of the <b>network around you</b> — not just your own phone.";
+  el.caption.classList.add("on");
+  el.nodes.querySelectorAll(".node").forEach((n, i) => {
+    n.classList.add("spawn"); n.style.animationDelay = (i * 38) + "ms";
+    setTimeout(() => { n.classList.remove("spawn"); n.style.animationDelay = ""; }, 900 + i * 38);
+  });
+}
+function idleCrowd() {
+  screen("cbuyer", { label: "Food Stall", big: "₹250", bigCls: "rup", btn: "Pay" });
+  const st = NODES.stall;
+  st.el.classList.remove("paid");
+  $(".tl", st.el).textContent = "Terminal";
+  $(".tv", st.el).textContent = "Waiting…";
+  clearFloats();
+}
+
+/* ── verification ────────────────────────────────────────────────────── */
+async function verify() {
+  const rows = $$(".vr", el.verify);
+  rows.forEach(r => r.classList.remove("on"));
+  el.verify.classList.add("on");
+  hold("gateway", true, rgba(COL.net, .9));
+  setStatus('MESHPAY GATEWAY · <span class="hl">VERIFYING PACKET</span>');
+  for (const r of rows) { await sleep(430); r.classList.add("on"); ring("gateway", COL.net, 120, 900); }
+  await sleep(560);
+  el.verify.classList.remove("on");
+}
+
+/* ── main payment sequence (campus) ──────────────────────────────────── */
+async function pay() {
+  if (S.running) return;
+  S.running = true; const tok = ++S.token; sync();
+  try {
+    idleCampus(); hideBanner(); alertOff(); flowReset(); hidePacket();
+    const c = chainIds();
+
+    /* 1 · tap + authorise */
+    flowStep(0);
+    setStatus("BUYER TAPS TO PAY · SHOP IS OFFLINE");
+    float("shop", "No internet", "bad", 2600);
+    const l0 = findLink("shop", "buyer"); if (l0) l0.e = 1;
+    await sleep(650);
+    const btn = $(".s-btn", NODES.buyer.el);
+    if (btn) { btn.classList.add("press"); ring("buyer", COL.ok, 70, 700); }
+    await sleep(260);
+    screen("buyer", { label: "Signing offline", big: "₹250", bigCls: "rup", dots: true });
+    pulse("buyer", rgba(COL.gold, .9));
+    await sleep(820);
+
+    /* 2 · packet is born */
+    screen("buyer", { label: "Packet ready", big: "₹250", bigCls: "rup", chip: "Encrypted", chipCls: "hot" });
+    showPacket("buyer");
+    ring("buyer", COL.bt, 110, 1000);
+    setStatus('ENCRYPTED <span class="hl">PAYMENT PACKET</span> CREATED · NO INTERNET NEEDED');
+    await sleep(1100);
+
+    /* 3 · bluetooth hops */
+    for (let i = 0; i < c.length - 1; i++) {
+      const from = c[i], to = c[i + 1], lastHop = i === c.length - 2;
+
+      if (lastHop && !S.bridge) {
+        el.packet.classList.add("held");
+        screen(from, { label: "Holding", big: "₹250", bigCls: "rup small", chip: "Store & forward", chipCls: "hot" });
+        float(from, "Packet stored · waiting", "gold", 0);
+        setStatus("PACKET WAITS ON THE RELAY UNTIL A BRIDGE APPEARS");
+        alertOn("No internet bridge found", "— packet held encrypted · press reconnect bridge");
+        hold(from, true, rgba(COL.gold, .9));
+        sync();
+        await waitBridge();
+        alertOff();
+        el.packet.classList.remove("held");
+        hold(from, false);
+        float(from, "Bridge in range", "bt", 1600);
+        banner("Bridge online", "Resuming store → carry → forward", "net");
+        await sleep(900);
+        hideBanner();
+      }
+
+      flowStep(i + 1);
+      setStatus(`BLUETOOTH HOP ${i + 1} · ${NODES[from].name.toUpperCase()} → ${NODES[to].name.toUpperCase()}`);
+      float(from, "Sending", "bt", 1200);
+      await hop(from, to);
+
+      if (to === "bridge") {
+        screen("bridge", { label: "MeshPay", big: "Bridge", bigCls: "small", chip: "Bridge found", chipCls: "ok" });
+        float("bridge", "Internet found", "ok", 2200);
+        banner("Bridge found", "Switching bluetooth → internet", "net");
+        ring("bridge", COL.net, 150, 1100);
+        await sleep(1150);
+        hideBanner();
+      } else {
+        screen(to, { label: "Carrying", big: "₹250", bigCls: "rup small", chip: "Packet stored", chipCls: "hot" });
+        float(to, "Packet stored", "gold", 1600);
+        await sleep(620);
+      }
+      screen(from, { label: "MeshPay", big: from === "buyer" ? "Sent" : "Forwarded", bigCls: "small", chip: from === "buyer" ? "Awaiting settlement" : "Relayed", chipCls: "" });
+    }
+
+    /* 4 · uplink to gateway */
+    flowStep(c.length);
+    setStatus('INTERNET UPLINK · <span class="hl">BRIDGE → MESHPAY GATEWAY</span>');
+    const nl = findLink("bridge", "gateway"); if (nl) nl.e = 1;
+    screen("bridge", { label: "Uplinking", big: "5G", bigCls: "small", dots: true });
+    await hop("bridge", "gateway", { kind: "net", dur: 1250, ease: t => Math.pow(t, 1.6) });
+    hidePacket();
+    ring("gateway", COL.net, 190, 1200);
+
+    /* 5 · verify + settle */
+    await verify();
+    flowStep(c.length + 1);
+    banner("Payment settled", "₹250 · offline buyer · offline merchant", "ok");
+    ring("gateway", COL.ok, 320, 1500);
+    hold("gateway", false);
+    await sleep(1500);
+    hideBanner();
+
+    /* 6 · receipt travels home */
+    setStatus("SETTLEMENT RECEIPT RETURNING THROUGH THE MESH");
+    showPacket("gateway", "ok");
+    await hop("gateway", "bridge", { kind: "net", dur: 620, col: COL.ok, ok: true });
+    for (let i = c.length - 1; i > 0; i--) {
+      screen(c[i], { label: "MeshPay", big: "Done", bigCls: "small", chip: "Receipt relayed", chipCls: "ok" });
+      await hop(c[i], c[i - 1], { dur: 400, col: COL.ok, ok: true, lift: .10 });
+    }
+    await hop("buyer", "shop", { dur: 430, col: COL.ok, ok: true, lift: .10 });
+    hidePacket();
+    ring("shop", COL.ok, 200, 1200);
+
+    screen("buyer", { label: "MeshPay", big: "✓", bigCls: "", chip: "Payment complete", chipCls: "ok" });
+    const sh = NODES.shop;
+    sh.el.classList.add("paid"); pulse("shop", rgba(COL.ok, .9));
+    $(".tl", sh.el).textContent = "Settled";
+    $(".tv", sh.el).textContent = "₹250";
+    float("shop", "Settled · ₹250", "ok", 4200);
+    setStatus('<span class="hl">SETTLED</span> · NEITHER THE BUYER NOR THE SHOP HAD INTERNET');
+
+    if (!S.seenCrowd) { el.bNext.style.display = ""; }
+  } catch (e) { if (e !== ABORT) console.error(e); }
+  finally { if (tok === S.token) { S.running = false; sync(); } }
+}
+
+function waitBridge() {
+  const tok = S.token;
+  return new Promise((res, rej) => { S.wait = { res, rej, tok }; });
+}
+
+/* ── crowd sequence ──────────────────────────────────────────────────── */
+async function payCrowd() {
+  if (S.running) return;
+  S.running = true; const tok = ++S.token; sync();
+  try {
+    idleCrowd(); hideBanner(); alertOff(); hidePacket();
+    const r = CROWD_ROUTE;
+
+    setStatus("CELLULAR NETWORK CONGESTED · NOBODY NEARBY CAN REACH THE BANK");
+    float("tower", "Congested", "bad", 2600);
+    for (const [id] of CROWD) if (!NODES[id].online) { ring(id, COL.dead, 26, 700); }
+    await sleep(1400);
+
+    setStatus("BUYER PAYS ₹250 AT THE FOOD STALL");
+    const btn = $(".s-btn", NODES.cbuyer.el);
+    if (btn) btn.classList.add("press");
+    ring("cbuyer", COL.ok, 70, 700);
+    await sleep(420);
+    screen("cbuyer", { label: "Packet ready", big: "₹250", bigCls: "rup", chip: "Encrypted", chipCls: "hot" });
+    showPacket("cbuyer");
+    await sleep(900);
+
+    for (let i = 0; i < r.length - 1; i++) {
+      const from = r[i], to = r[i + 1];
+      setStatus(`SEEKING A PATH · BLUETOOTH HOP ${i + 1} OF ${r.length - 1}`);
+      // ping neighbours
+      LINKS.filter(l => l.a === from || l.b === from).forEach(l => { l.e = Math.max(l.e, .55); });
+      ring(from, COL.bt, 130, 1000);
+      await hop(from, to, { dur: 780, lift: .16 });
+      if (NODES[to].online) {
+        float(to, "Internet found", "ok", 2400);
+        banner("Path found", "A stranger's phone carries it the last mile", "net");
+        await sleep(1300); hideBanner();
+      } else {
+        float(to, "Stored", "gold", 1100);
+        await sleep(250);
+      }
+    }
+
+    setStatus('INTERNET UPLINK · <span class="hl">MESHPAY GATEWAY</span>');
+    const nl = findLink("c14", "gateway"); if (nl) nl.e = 1;
+    await hop("c14", "gateway", { kind: "net", dur: 1100, ease: t => Math.pow(t, 1.6) });
+    hidePacket(); ring("gateway", COL.net, 190, 1200);
+
+    await verify();
+    banner("Payment settled", "₹250 · routed through 5 phones", "ok");
+    ring("gateway", COL.ok, 320, 1500);
+    hold("gateway", false);
+    await sleep(1600); hideBanner();
+
+    setStatus("RECEIPT RETURNING THROUGH THE CROWD");
+    showPacket("gateway", "ok");
+    await hop("gateway", "c14", { kind: "net", dur: 560, col: COL.ok, ok: true });
+    for (let i = r.length - 1; i > 0; i--)
+      await hop(r[i], r[i - 1], { dur: 300, col: COL.ok, ok: true, lift: .12 });
+    await hop("cbuyer", "stall", { dur: 400, col: COL.ok, ok: true, lift: .10 });
+    hidePacket();
+
+    screen("cbuyer", { label: "MeshPay", big: "✓", chip: "Payment complete", chipCls: "ok" });
+    const st = NODES.stall;
+    st.el.classList.add("paid"); pulse("stall", rgba(COL.ok, .9));
+    $(".tl", st.el).textContent = "Settled";
+    $(".tv", st.el).textContent = "₹250";
+    float("stall", "Settled · ₹250", "ok", 4200);
+    ring("stall", COL.ok, 200, 1200);
+    setStatus('<span class="hl">SETTLED</span> · THE CROWD WAS THE NETWORK');
+  } catch (e) { if (e !== ABORT) console.error(e); }
+  finally { if (tok === S.token) { S.running = false; sync(); } }
+}
+
+/* ── controls ────────────────────────────────────────────────────────── */
+function sync() {
+  const crowd = S.scene === "crowd";
+  const waiting = !!S.wait;
+  el.bPay.disabled    = S.running;
+  el.bPay.classList.toggle("hint", !S.running && !S.intro);
+  el.bRelay.disabled  = crowd || S.running || chainIds().length >= MAX_CHAIN;
+  el.bRelay.style.display  = crowd ? "none" : "";
+  el.bBridge.style.display = crowd ? "none" : "";
+  el.bBridge.textContent = S.bridge ? "Disconnect bridge" : "Reconnect bridge";
+  el.bBridge.classList.toggle("danger", S.bridge);
+  el.bBridge.classList.toggle("next", !S.bridge && waiting);
+  el.bBridge.disabled = false;
+  $$(".tab").forEach(t => t.classList.toggle("sel", t.dataset.scene === S.scene));
+}
+
+el.bPay.onclick = () => (S.scene === "crowd" ? payCrowd() : pay());
+el.nodes.addEventListener("click", e => {
+  if (e.target.closest(".s-btn") && !S.running) el.bPay.click();
+});
+el.bReplay.onclick = () => {
+  abortRun(); hideBanner(); alertOff(); hidePacket(); clearFloats(); flowReset();
+  $$(".node").forEach(n => n.classList.remove("act"));
+  if (S.scene === "crowd") { idleCrowd(); payCrowd(); }
+  else { idleCampus(); pay(); }
+};
+el.bRelay.onclick = () => {
+  if (chainIds().length >= MAX_CHAIN) return;
+  abortRun(); hidePacket(); hideBanner(); clearFloats();
+  S.relays++;
+  const id = "r" + (S.relays - 1);
+  addPhone(id, { name: "Relay " + S.relays, online: false });
+  // rebuild chain links
+  LINKS.filter(l => l.type === "bt").forEach(l => l.el && l.el.remove());
+  LINKS = LINKS.filter(l => l.type !== "bt");
+  const c = chainIds();
+  for (let i = 0; i < c.length - 1; i++) link(c[i], c[i + 1], "bt", { label: "Bluetooth" });
+  const n = NODES[id];
+  n.el.style.transition = "none";
+  layout();
+  requestAnimationFrame(() => { n.el.style.transition = ""; });
+  n.el.classList.add("spawn");
+  setTimeout(() => n.el.classList.remove("spawn"), 800);
+  idleCampus(); buildFlow(); sync();
+  setStatus(`MESH EXPANDED · ${c.length} PHONES CARRY THE PACKET`);
+  float(id, "Joined the mesh", "bt", 2000);
+  ring(id, COL.bt, 120, 1100);
+};
+el.bBridge.onclick = () => {
+  S.bridge = !S.bridge;
+  setOnline("bridge", S.bridge);
+  const nl = findLink("bridge", "gateway"); if (nl) nl.e = 1;
+  if (S.bridge) {
+    ring("bridge", COL.net, 160, 1100);
+    float("bridge", "Internet restored", "ok", 2000);
+    if (!S.running) screen("bridge", { label: "MeshPay", big: "Online", bigCls: "small", chip: "Bridge ready", chipCls: "ok" });
+    if (S.wait) { const w = S.wait; S.wait = null; w.res(); }
+    else setStatus("BRIDGE BACK ONLINE · PRESS PAY");
+  } else {
+    ring("bridge", COL.dead, 140, 1000);
+    float("bridge", "Internet lost", "bad", 2200);
+    if (!S.running) screen("bridge", { label: "MeshPay", big: "Offline", bigCls: "small", chip: "No internet", chipCls: "bad" });
+    setStatus(S.running ? "BRIDGE LOST · PACKET WILL BE HELD ON THE RELAY"
+                        : "BRIDGE OFFLINE · PRESS PAY TO SEE STORE & FORWARD");
+  }
+  sync();
+};
+el.bNext.onclick = () => goScene("crowd");
+$$(".tab").forEach(t => t.onclick = () => goScene(t.dataset.scene));
+
+function goScene(name) {
+  if (S.scene === name) return;
+  el.stage.style.transition = "opacity .45s ease";
+  el.stage.style.opacity = 0;
+  setTimeout(() => {
+    if (name === "crowd") {
+      S.seenCrowd = true; el.bNext.style.display = "none";
+      buildCrowd();
+      setStatus("A FESTIVAL. 18,000 PHONES. THE CELL NETWORK IS DEAD.");
+      el.flow.classList.remove("on");
+    } else {
+      buildCampus();
+      setStatus("A SHOP WITH NO INTERNET. A BUYER WITH NO INTERNET.");
+      el.flow.classList.add("on");
+    }
+    sync();
+    el.stage.style.opacity = 1;
+    setTimeout(() => { if (S.scene === "crowd") payCrowd(); else sync(); }, 900);
+  }, 460);
+}
+
+document.addEventListener("keydown", e => {
+  if (e.code === "Space") { e.preventDefault(); el.bPay.disabled ? el.bReplay.click() : el.bPay.click(); }
+});
+
+/* ── opening sequence ────────────────────────────────────────────────── */
+function killOv(sel) {
+  const n = $(sel); if (!n || n._killed) return;
+  n._killed = true; n.classList.add("hide");
+  setTimeout(() => { n.style.display = "none"; }, 900);
+}
+async function aha() {
+  const bad = $("#ahaBad"), ok = $("#ahaOk"), sweep = $("#sweep");
+  $("#aha").classList.remove("hide");
+  bad.classList.add("on");
+  const bItems = $$(".ci, .ar", bad);
+  for (const it of bItems) { await sleep(230); it.classList.add("on"); }
+  await sleep(120);
+  $(".ci.fail", bad).classList.add("shake");
+  await sleep(1250);
+
+  sweep.classList.add("go");
+  bad.classList.remove("on"); bad.classList.add("out");
+  await sleep(430);
+  ok.classList.add("on");
+  const oItems = $$(".ci, .ar", ok);
+  for (const it of oItems) { await sleep(125); it.classList.add("on"); }
+  await sleep(1500);
+  killOv("#aha");
+}
+
+async function intro() {
+  seedDust(); resize();
+  buildCampus();
+  el.stage.style.opacity = 1;
+  await sleep(3000);
+  killOv("#intro");
+  $("#brand").classList.add("on");
+  await sleep(700);
+  await aha();
+  $("#skip").classList.add("hide");
+  $("#tabs").classList.add("on");
+  $("#flow").classList.add("on");
+  $("#bottom").classList.add("on");
+  S.intro = false;
+  setStatus("A SHOP WITH NO INTERNET. A BUYER WITH NO INTERNET.");
+  sync();
+  await sleep(1400);
+  if (!S.running) pay();
+}
+$("#skip").onclick = () => {
+  S.token++;                      // cancel intro timeline
+  killOv("#intro"); killOv("#aha");
+  $("#skip").classList.add("hide");
+  $("#brand").classList.add("on");
+  $("#tabs").classList.add("on");
+  $("#flow").classList.add("on");
+  $("#bottom").classList.add("on");
+  S.intro = false;
+  setStatus("A SHOP WITH NO INTERNET. A BUYER WITH NO INTERNET.");
+  sync();
+  setTimeout(() => { if (!S.running) pay(); }, 700);
+};
+
+/* ── boot ────────────────────────────────────────────────────────────── */
+requestAnimationFrame(frame);
+intro().catch(e => { if (e !== ABORT) console.error(e); });
+
+})();
+</script>
+</body>
+</html>
