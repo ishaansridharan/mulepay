@@ -1,0 +1,142 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #030712;
+    color: #f3f4f6;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(51, 65, 85, 0.8);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(71, 85, 105, 1);
+}
+
+/* Monospace font utility */
+.font-mono-code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Organic Floating Glow Animations */
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-12px) scale(1.04);
+  }
+}
+
+@keyframes pulseGlowEmerald {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.4), inset 0 0 10px rgba(16, 185, 129, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.7), inset 0 0 15px rgba(16, 185, 129, 0.4);
+  }
+}
+
+@keyframes pulseGlowCyan {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(6, 182, 212, 0.4), inset 0 0 10px rgba(6, 182, 212, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(6, 182, 212, 0.7), inset 0 0 15px rgba(6, 182, 212, 0.4);
+  }
+}
+
+@keyframes pulseGlowRose {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(244, 63, 94, 0.4), inset 0 0 10px rgba(244, 63, 94, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(244, 63, 94, 0.8), inset 0 0 20px rgba(244, 63, 94, 0.5);
+  }
+}
+
+.animate-float-slow {
+  animation: floatSlow 6s ease-in-out infinite;
+}
+
+.animate-glow-emerald {
+  animation: pulseGlowEmerald 2s infinite ease-in-out;
+}
+
+.animate-glow-cyan {
+  animation: pulseGlowCyan 2s infinite ease-in-out;
+}
+
+.animate-glow-rose {
+  animation: pulseGlowRose 1.5s infinite ease-in-out;
+}
+
+/* Wave packet transmission animation */
+@keyframes flowLine {
+  0% {
+    stroke-dashoffset: 24;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-flow-line {
+  stroke-dasharray: 8 4;
+  animation: flowLine 0.8s linear infinite;
+}
+
+/* Organic Flowy Glassmorphism Styles */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.glass-flow {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.7) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+.glass-card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card-hover:hover {
+  transform: translateY(-4px);
+  border-color: rgba(56, 189, 248, 0.3);
+  box-shadow: 0 12px 30px -10px rgba(6, 182, 212, 0.25);
+}
+
+/* Gradient Pill Utilities */
+.gradient-text-cyan-emerald {
+  background: linear-gradient(135deg, #38bdf8 0%, #34d399 50%, #a7f3d0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-amber-rose {
+  background: linear-gradient(135deg, #fbbf24 0%, #f87171 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
