@@ -1,0 +1,2368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>BouncePay — Payments that bounce until they connect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   BouncePay — interactive visual demo
+   Single file. No dependencies. The animation is the product.
+   ============================================================ */
+
+/* ------------------------------------------------------------------
+   MATERIAL YOU (MD3) TOKEN LAYER  — single source of truth.
+
+   Reference tokens (--md-*) are the palette. The semantic aliases at
+   the bottom are what every component consumes, so a palette change is
+   one block here rather than an edit to every rule.
+   MD3 dark tones, seeded from #6750A4.
+   ------------------------------------------------------------------ */
+:root{
+  color-scheme:dark;
+
+  /* --- MD3 reference tokens --- */
+  --md-primary:#D0BCFF;
+  --md-on-primary:#381E72;
+  --md-primary-container:#4F378B;
+  --md-on-primary-container:#EADDFF;
+  --md-secondary-container:#4A4458;
+  --md-on-secondary-container:#E8DEF8;
+  --md-tertiary:#EFB8C8;
+  --md-tertiary-container:#633B48;
+  --md-on-tertiary-container:#FFD8E4;
+  --md-error:#F2B8B5;
+  --md-error-container:#8C1D18;
+  --md-on-error-container:#F9DEDC;
+
+  --md-surface:#141218;
+  --md-surface-container-lowest:#0F0D13;
+  --md-surface-container-low:#1D1B20;
+  --md-surface-container:#211F26;
+  --md-surface-container-high:#2B2930;
+  --md-surface-container-highest:#36343B;
+  --md-on-surface:#E6E0E9;
+  --md-on-surface-variant:#CAC4D0;
+  --md-outline:#938F99;
+  --md-outline-variant:#49454F;
+
+  /* product accents — tonal, one pair per theme */
+  --md-bt:#BBC3FF;      /* bluetooth */
+  --md-net:#4FDBC7;     /* internet  */
+  --md-ok:#7EDB8F;      /* settled   */
+  --md-gold:#F5C542;    /* money     */
+
+  /* rgb triplets so the canvas engine can read the same palette */
+  --rgb-bt:187 195 255;
+  --rgb-net:79 219 199;
+  --rgb-ok:126 219 143;
+  --rgb-gold:245 197 66;
+  --rgb-bad:242 184 181;
+  --rgb-weak:147 143 153;
+  --rgb-grid:208 188 255;
+
+  /* MD3 elevation — soft and diffuse, never dramatic */
+  --md-elev-1:0 1px 3px rgba(0,0,0,.50),0 1px 2px rgba(0,0,0,.32);
+  --md-elev-2:0 2px 6px 2px rgba(0,0,0,.42),0 1px 2px rgba(0,0,0,.36);
+  --md-elev-3:0 4px 8px 3px rgba(0,0,0,.44),0 1px 3px rgba(0,0,0,.40);
+  --md-elev-4:0 6px 10px 4px rgba(0,0,0,.46),0 2px 3px rgba(0,0,0,.42);
+
+  /* motion — MD3 emphasised decelerate */
+  --md-ease:cubic-bezier(.2,0,0,1);
+  --md-dur-fast:200ms;
+  --md-dur:300ms;
+  --md-dur-slow:450ms;
+
+  /* shape scale */
+  --md-r-xs:8px;  --md-r-sm:12px; --md-r-md:16px;
+  --md-r-lg:24px; --md-r-xl:28px; --md-r-xxl:48px;
+
+  --md-blend:screen;
+  --md-orb:.22;
+  --glass:rgba(43,41,48,.68);
+  --glass-tight:rgba(33,31,38,.84);
+  --bt-soft:rgba(187,195,255,.45);
+  --pur-soft:rgba(208,188,255,.45);
+  --grain:rgba(230,224,233,.10);
+
+  /* --- semantic aliases consumed across the whole sheet --- */
+  --bg:var(--md-surface);
+  --bg2:var(--md-surface-container-low);
+  --ink:var(--md-on-surface);
+  --muted:var(--md-on-surface-variant);
+  --dim:var(--md-outline);
+  --hair:var(--md-outline-variant);
+  --bt:var(--md-bt);
+  --net:var(--md-net);
+  --ok:var(--md-ok);
+  --bad:var(--md-error);
+  --gold:var(--md-gold);
+  --pur:var(--md-primary);
+  --blu:var(--md-bt);
+  --edge:var(--md-outline-variant);
+  --maxw:1180px;
+
+  --mono:"Roboto Mono",ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  --sans:"Roboto",-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+}
+
+
+@keyframes beat{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
+/* scene tabs --------------------------------------------------------- */
+.tab{
+  position:relative;overflow:hidden;isolation:isolate;
+  display:inline-flex;align-items:center;min-height:32px;
+  font-family:var(--sans);font-size:13px;font-weight:500;letter-spacing:.01em;
+  color:var(--md-on-surface-variant);background:transparent;
+  border:1px solid var(--md-outline);border-radius:8px;
+  padding:0 14px;cursor:pointer;white-space:nowrap;
+  transition:background var(--md-dur) var(--md-ease),color var(--md-dur) var(--md-ease),
+             border-color var(--md-dur) var(--md-ease),transform var(--md-dur-fast) var(--md-ease);
+}
+.tab::before{content:"";position:absolute;inset:0;z-index:-1;background:currentColor;
+  opacity:0;transition:opacity var(--md-dur-fast) var(--md-ease)}
+.tab:hover::before{opacity:.08}
+.tab:active{transform:scale(.95)}
+.tab.sel{
+  color:var(--md-on-secondary-container);background:var(--md-secondary-container);
+  border-color:transparent;
+}
+.tab .num{color:var(--md-primary);margin-right:7px;font-variant-numeric:tabular-nums}
+
+.fstep{
+  position:relative;display:flex;align-items:center;gap:7px;
+  font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--md-on-surface-variant);padding:0 13px;
+  transition:color var(--md-dur) var(--md-ease);white-space:nowrap;
+}
+.fstep .fd{
+  width:5px;height:5px;border-radius:50%;background:rgba(125,160,215,.22);
+  transition:all .45s ease;flex:none;
+}
+.fstep.done{color:var(--md-primary)}
+.fstep.done .fd{background:var(--bt);box-shadow:0 0 8px var(--bt-soft)}
+.fstep.live{color:var(--md-on-surface);font-weight:500}
+.fstep.live .fd{background:var(--net);box-shadow:0 0 16px var(--net);transform:scale(1.5)}
+.fstep.fin.done .fd,.fstep.fin.live .fd{background:var(--ok);box-shadow:0 0 16px var(--ok)}
+.fsep{width:20px;height:1px;background:rgba(125,160,215,.16);flex:none}
+
+#net{position:absolute;inset:0;width:100%;height:100%}
+#nodes{position:absolute;inset:0}
+
+/* Device scope — phones are dark glass regardless of the page theme,
+   so their internals read from --dev-* rather than the surface aliases. */
+.phone,.mini{
+  --dev-ink:#EAF0FF;
+  --dev-muted:#93A3C2;
+  --dev-dim:#66748E;
+}
+
+/* nodes -------------------------------------------------------------- */
+.node{
+  position:absolute;left:0;top:0;
+  transform:translate(-50%,-50%) scale(var(--s,1));
+  transition:left .75s cubic-bezier(.6,0,.25,1), top .75s cubic-bezier(.6,0,.25,1),
+             opacity .5s ease, filter .5s ease;
+  will-change:left,top;
+}
+.node.spawn{animation:spawn .7s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes spawn{from{opacity:0;transform:translate(-50%,-50%) scale(calc(var(--s,1)*.4))}
+                 to{opacity:1;transform:translate(-50%,-50%) scale(var(--s,1))}}
+
+/* --- smartphone ----------------------------------------------------- */
+.phone .body{
+  position:relative;width:86px;height:172px;border-radius:19px;
+  background:linear-gradient(155deg,#39435c 0%,#1a2233 18%,#10161f 55%,#0b0f16 100%);
+  padding:3px;
+  box-shadow:
+    0 0 0 .5px rgba(180,205,245,.30),
+    0 26px 40px -18px rgba(0,0,0,.95),
+    0 4px 10px -4px rgba(0,0,0,.8),
+    inset 0 1px 0 rgba(255,255,255,.20);
+  transition:box-shadow .45s ease, transform .45s cubic-bezier(.2,1.4,.4,1);
+}
+.phone .body::before,.phone .body::after{ /* side buttons */
+  content:"";position:absolute;border-radius:2px;
+  background:linear-gradient(180deg,#39435c,#141a26);
+}
+.phone .body::before{right:-1.5px;top:44px;width:2px;height:26px}
+.phone .body::after{left:-1.5px;top:38px;width:2px;height:16px;
+  box-shadow:0 22px 0 #232b3d,0 44px 0 #232b3d}
+.phone .glass{
+  position:absolute;inset:3px;border-radius:16px;overflow:hidden;
+  background:linear-gradient(178deg,#0a1120 0%,#070c17 60%,#05080f 100%);
+  border:.5px solid rgba(255,255,255,.055);
+}
+.phone .glass::after{ /* screen reflection */
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:6;
+  background:linear-gradient(142deg,rgba(255,255,255,.075) 0%,transparent 34%,transparent 74%,rgba(255,255,255,.028) 100%);
+}
+.phone .island{
+  position:absolute;top:6px;left:50%;transform:translateX(-50%);
+  width:28px;height:6.5px;border-radius:5px;background:#03060c;z-index:5;
+  box-shadow:inset 0 0 0 .5px rgba(255,255,255,.06);
+}
+.phone .sbar{
+  position:absolute;top:5.5px;left:8px;right:8px;height:8px;z-index:4;
+  display:flex;align-items:center;justify-content:space-between;
+  font-family:var(--mono);font-size:5.5px;letter-spacing:.06em;color:var(--dev-dim);
+}
+.phone .sig{display:flex;align-items:center;gap:2px}
+.phone .sig i{display:block;width:2px;background:currentColor;border-radius:1px;opacity:.35}
+.phone .sig i:nth-child(1){height:3px}
+.phone .sig i:nth-child(2){height:4.5px}
+.phone .sig i:nth-child(3){height:6px}
+.phone .sig i:nth-child(4){height:7.5px}
+.node.online .sig{color:#4FDBC7}
+.node.online .sig i{opacity:1}
+.node.offline .sig{color:#FF8A8A}
+.node.offline .sig i{opacity:.25}
+.node.offline .sig i:nth-child(1){opacity:.7}
+
+/* screen content */
+.scr{
+  position:absolute;left:0;right:0;top:19px;bottom:8px;z-index:3;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;padding:6px 7px;text-align:center;
+}
+.s-label{
+  font-family:var(--mono);font-size:5.6px;letter-spacing:.17em;text-transform:uppercase;
+  color:var(--dev-dim);line-height:1.5;
+}
+.s-big{font-size:19px;font-weight:620;letter-spacing:-.03em;line-height:1;color:var(--dev-ink)}
+.s-big.rup{color:#FFC861;text-shadow:0 0 22px rgba(255,200,97,.45)}
+.s-big.small{font-size:10px;letter-spacing:-.01em}
+.s-chip{
+  font-family:var(--mono);font-size:5.4px;letter-spacing:.15em;text-transform:uppercase;
+  padding:3.5px 7px;border-radius:999px;line-height:1;
+  border:.5px solid rgba(125,160,215,.25);color:var(--dev-muted);
+  background:rgba(125,160,215,.06);
+}
+.s-chip.hot{color:#FFC861;border-color:rgba(255,200,97,.45);background:rgba(255,200,97,.10);
+  box-shadow:0 0 16px -3px rgba(255,200,97,.55)}
+.s-chip.ok{color:#5BE39B;border-color:rgba(47,224,141,.5);background:rgba(47,224,141,.11);
+  box-shadow:0 0 16px -3px rgba(47,224,141,.6)}
+.s-chip.bad{color:#FF8A8A;border-color:rgba(255,90,106,.45);background:rgba(255,90,106,.10)}
+.s-chip.bt{color:#9DB2FF;border-color:rgba(92,140,255,.5);background:rgba(92,140,255,.11);
+  box-shadow:0 0 16px -3px rgba(92,140,255,.6)}
+.s-btn{
+  font-family:var(--mono);font-size:6.5px;letter-spacing:.22em;font-weight:700;
+  color:#05131c;padding:6px 15px;border-radius:999px;line-height:1;
+  background:linear-gradient(180deg,#7de8c8,#2fe0a0);
+  box-shadow:0 0 22px -4px rgba(47,224,160,.85);
+  transition:transform .12s ease,filter .12s ease;cursor:pointer;
+}
+.s-btn.press{transform:scale(.88);filter:brightness(.8)}
+.s-dots{display:flex;gap:3px}
+.s-dots i{width:3px;height:3px;border-radius:50%;background:var(--bt);animation:sd 1.1s infinite}
+.s-dots i:nth-child(2){animation-delay:.15s}
+.s-dots i:nth-child(3){animation-delay:.3s}
+@keyframes sd{0%,60%,100%{opacity:.2;transform:translateY(0)}30%{opacity:1;transform:translateY(-2px)}}
+
+/* active phone glow */
+.node.act .body{
+  transform:translateY(-3px);
+  box-shadow:
+    0 0 0 .5px rgba(190,215,255,.55),
+    0 0 42px -6px var(--glow,rgba(92,140,255,.85)),
+    0 30px 45px -18px rgba(0,0,0,.95),
+    inset 0 1px 0 rgba(255,255,255,.22);
+}
+
+/* caption under node */
+.cap{
+  position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  margin-top:13px;display:flex;flex-direction:column;align-items:center;gap:5px;white-space:nowrap;
+}
+.cap-name{
+  font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.21em;
+  text-transform:uppercase;color:var(--ink);opacity:.92;
+}
+.cap-net{
+  font-family:var(--mono);font-size:7.5px;letter-spacing:.15em;text-transform:uppercase;
+  display:flex;align-items:center;gap:5px;color:var(--bad);
+}
+.cap-net .pip{width:4px;height:4px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
+.node.online .cap-net{color:var(--net)}
+.node.online .cap-net .pip{animation:beat 2s infinite}
+
+/* transient floating label */
+.float{
+  position:absolute;left:50%;bottom:100%;transform:translate(-50%,6px);
+  margin-bottom:14px;white-space:nowrap;opacity:0;pointer-events:none;
+  font-family:var(--mono);font-size:8px;letter-spacing:.18em;text-transform:uppercase;
+  padding:5px 10px;border-radius:999px;line-height:1;
+  background:var(--md-surface-container-highest);border:1px solid var(--md-outline-variant);
+  color:var(--md-on-surface-variant);transition:opacity .35s ease,transform .35s cubic-bezier(.2,1.3,.4,1);
+}
+.float.on{opacity:1;transform:translate(-50%,0)}
+.float.bt{color:var(--md-bt);border-color:var(--md-bt)}
+.float.ok{color:var(--md-ok);border-color:var(--md-ok)}
+.float.bad{color:var(--md-on-error-container);background:var(--md-error-container);
+  border-color:transparent}
+.float.gold{color:var(--md-gold);border-color:var(--md-gold)}
+
+/* --- shop ----------------------------------------------------------- */
+.shop .card{
+  position:relative;width:186px;border-radius:15px;overflow:hidden;
+  background:var(--md-surface-container-high);
+  border:1px solid var(--md-outline-variant);
+  box-shadow:var(--md-elev-2);
+  transition:box-shadow .5s ease,border-color .5s ease;
+}
+.shop.act .card{border-color:rgba(47,224,141,.5);box-shadow:0 0 50px -12px rgba(47,224,141,.6),0 30px 50px -22px rgba(0,0,0,.95)}
+.shop .awn{height:7px;background:repeating-linear-gradient(90deg,#e0576a 0 11px,#0e1420 11px 22px);opacity:.72}
+.shop .inner{padding:14px 15px 15px}
+.shop .nm{font-size:13px;font-weight:500;letter-spacing:0;color:var(--md-on-surface)}
+.shop .sub{
+  margin-top:4px;font-family:var(--mono);font-size:7.5px;letter-spacing:.17em;
+  text-transform:uppercase;color:var(--dim);
+}
+.shop .term{
+  margin-top:12px;border-radius:9px;padding:11px 12px;
+  background:var(--md-surface-container-lowest);
+  border:1px solid var(--md-outline-variant);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;
+}
+.shop .term .tl{font-family:var(--mono);font-size:7px;letter-spacing:.19em;color:var(--dim);text-transform:uppercase}
+.shop .term .tv{font-size:15px;font-weight:640;letter-spacing:-.02em;color:var(--muted);transition:color .5s ease}
+.shop.paid .term{border-color:rgba(47,224,141,.45);box-shadow:inset 0 0 26px -8px rgba(47,224,141,.6)}
+.shop.paid .term .tv{color:var(--ok);text-shadow:0 0 20px rgba(47,224,141,.6)}
+.shop .noint{
+  margin-top:11px;display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--mono);font-size:7.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--bad);padding:5px 9px;border-radius:999px;
+  border:.5px solid rgba(255,90,106,.3);background:rgba(255,90,106,.07);
+}
+.shop .noint .pip{width:4px;height:4px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
+
+/* --- gateway -------------------------------------------------------- */
+.gw .card{
+  position:relative;width:168px;border-radius:15px;padding:15px 16px 14px;
+  background:var(--md-surface-container-high);
+  border:1px solid var(--md-outline-variant);
+  box-shadow:var(--md-elev-2);text-align:center;
+  transition:box-shadow .55s ease,border-color .55s ease;
+}
+.gw.act .card{border-color:rgba(47,240,200,.75);box-shadow:0 0 70px -12px rgba(47,240,200,.85),0 26px 45px -22px rgba(0,0,0,.9)}
+.gw .cloud{margin:0 auto 9px;display:block;color:var(--net);opacity:.9}
+.gw .nm{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--md-on-surface)}
+.gw .sub{margin-top:5px;font-family:var(--mono);font-size:7px;letter-spacing:.16em;color:var(--dim);text-transform:uppercase}
+.gw .ring{
+  position:absolute;inset:-1px;border-radius:15px;pointer-events:none;opacity:0;
+  border:1px solid var(--net);transition:opacity .3s ease;
+}
+.gw.act .ring{opacity:1;animation:gwring 1.6s ease-out infinite}
+@keyframes gwring{0%{transform:scale(1);opacity:.75}100%{transform:scale(1.16);opacity:0}}
+
+/* verify panel */
+#verify{
+  position:absolute;left:0;top:0;z-index:22;
+  transform:translate(-100%,-50%) scale(var(--s,1));transform-origin:right center;
+  opacity:0;pointer-events:none;transition:opacity .4s ease;
+  width:172px;padding:14px 15px;border-radius:var(--md-r-sm);
+  background:var(--md-surface-container-highest);border:1px solid var(--md-outline-variant);
+  box-shadow:var(--md-elev-3);
+}
+#verify.on{opacity:1}
+#verify .vh{
+  font-family:var(--mono);font-size:8px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--net);display:flex;align-items:center;gap:7px;margin-bottom:10px;
+}
+#verify .vh .sp{
+  width:8px;height:8px;border-radius:50%;border:1.5px solid var(--net);border-top-color:transparent;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+#verify .vr{
+  display:flex;align-items:center;gap:8px;padding:4px 0;
+  font-family:var(--mono);font-size:8px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--dim);opacity:0;transform:translateX(-6px);
+  transition:opacity .3s ease,transform .3s ease,color .3s ease;
+}
+#verify .vr.on{opacity:1;transform:none;color:var(--muted)}
+#verify .vr .ck{color:var(--ok);font-size:9px;opacity:0;transition:opacity .25s ease}
+#verify .vr.on .ck{opacity:1}
+
+/* --- crowd mini phone ----------------------------------------------- */
+.mini .body::before,.mini .body::after{display:none}
+.mini .body{
+  position:relative;width:26px;height:48px;border-radius:7px;
+  background:linear-gradient(155deg,#333d54,#11161f);padding:1.5px;
+  box-shadow:0 0 0 .5px rgba(160,190,235,.20),0 10px 16px -8px rgba(0,0,0,.9);
+  transition:box-shadow .4s ease,transform .4s ease;
+}
+.mini .glass{
+  position:absolute;inset:1.5px;border-radius:5.5px;
+  background:linear-gradient(180deg,#0a1120,#05080f);overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+.mini .pulse{width:5px;height:5px;border-radius:50%;background:var(--dev-dim);transition:all .4s ease}
+.mini.online .pulse{background:#4FDBC7;box-shadow:0 0 10px #4FDBC7;animation:beat 2.4s infinite}
+.mini.offline .pulse{background:rgba(255,138,138,.55)}
+.mini.act .body{transform:translateY(-2px);
+  box-shadow:0 0 0 .5px rgba(190,215,255,.6),0 0 26px -4px var(--glow,var(--bt)),0 12px 18px -8px rgba(0,0,0,.9)}
+.mini .cap{margin-top:8px}
+.mini .cap-name{font-size:7px;letter-spacing:.16em}
+.mini .cap-net{font-size:6px}
+
+/* --- tower / stage props -------------------------------------------- */
+.prop .card{
+  border-radius:12px;padding:11px 14px;text-align:center;
+  background:var(--md-surface-container-high);
+  border:1px solid var(--md-outline-variant);box-shadow:var(--md-elev-1);
+}
+.prop .nm{font-family:var(--mono);font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.prop .sub{margin-top:5px;font-family:var(--mono);font-size:7px;letter-spacing:.15em;text-transform:uppercase;color:var(--bad);
+  display:flex;align-items:center;justify-content:center;gap:5px}
+.prop .sub .pip{width:4px;height:4px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor;
+  animation:flick 1.4s infinite}
+@keyframes flick{0%,100%{opacity:1}45%{opacity:.15}}
+.prop.stagebar .card{width:210px;border-color:rgba(92,140,255,.2)}
+.prop.stagebar .sub{color:var(--dim)}
+
+/* --- link badge --- */
+.llab{
+  position:absolute;left:0;top:0;z-index:8;pointer-events:none;white-space:nowrap;
+  transform:translate(-50%,-50%) scale(var(--s,1));
+  font-family:var(--mono);font-size:7.5px;letter-spacing:.21em;text-transform:uppercase;
+  color:var(--md-on-surface-variant);padding:4px 8px;border-radius:999px;line-height:1;
+  background:var(--md-surface-container-highest);border:1px solid var(--md-outline-variant);
+  transition:color .35s ease,border-color .35s ease,box-shadow .35s ease,opacity .4s ease;
+}
+.llab.hot{color:var(--md-bt);border-color:var(--md-bt)}
+.llab.net{color:var(--md-net)}
+.llab.net.hot{color:var(--md-net);border-color:var(--md-net)}
+.llab.dead{color:var(--md-error);border-color:var(--md-error)}
+
+/* --- packet --------------------------------------------------------- */
+#packet{
+  position:absolute;left:0;top:0;z-index:25;opacity:0;pointer-events:none;
+  transition:opacity .3s ease;
+  filter:drop-shadow(0 0 16px rgba(255,200,97,.75));
+}
+#packet.on{opacity:1}
+#packet .pk{
+  position:relative;width:38px;height:38px;border-radius:11px;
+  background:linear-gradient(150deg,#ffe0a0,#ffb545 45%,#ff9d2e);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 0 1px rgba(255,255,255,.4),inset 0 1px 0 rgba(255,255,255,.7),0 0 34px rgba(255,180,70,.7);
+  transition:background .45s ease,box-shadow .45s ease;
+}
+#packet .pk::before{ /* spin ring */
+  content:"";position:absolute;inset:-6px;border-radius:15px;
+  border:1px dashed rgba(255,200,97,.55);animation:spin 5.5s linear infinite;
+}
+#packet .lock{color:#4a2c00;display:block}
+#packet .plabel{
+  position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:11px;
+  font-family:var(--mono);font-size:7.5px;letter-spacing:.19em;text-transform:uppercase;
+  white-space:nowrap;color:var(--gold);
+  padding:4px 9px;border-radius:999px;background:rgba(6,10,20,.9);
+  border:.5px solid rgba(255,200,97,.4);
+}
+#packet.ok{filter:drop-shadow(0 0 20px rgba(47,224,141,.85))}
+#packet.ok .pk{background:linear-gradient(150deg,#b6ffdc,#3fe89b 45%,#20d986);
+  box-shadow:0 0 0 1px rgba(255,255,255,.45),inset 0 1px 0 rgba(255,255,255,.7),0 0 40px rgba(47,224,141,.8)}
+#packet.ok .pk::before{border-color:rgba(47,224,141,.6)}
+#packet.ok .lock{color:#004a2a}
+#packet.ok .plabel{color:var(--ok);border-color:rgba(47,224,141,.45)}
+#packet.held .pk{animation:heldp 1.5s ease-in-out infinite}
+@keyframes heldp{0%,100%{transform:scale(1)}50%{transform:scale(.9)}}
+
+/* --- banner --------------------------------------------------------- */
+#banner{
+  position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);z-index:45;
+  pointer-events:none;text-align:center;opacity:0;transition:opacity .45s ease;
+  padding:56px 130px;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(3,5,10,.95) 0%,rgba(3,5,10,.88) 52%,rgba(3,5,10,0) 100%);
+}
+#banner.on{opacity:1}
+#banner .bg{
+  font-size:clamp(26px,4.3vw,54px);font-weight:680;letter-spacing:-.035em;line-height:1.05;
+  animation:bpop .8s cubic-bezier(.16,1,.3,1) both;
+}
+#banner .bs{
+  margin-top:13px;font-family:var(--mono);font-size:10px;letter-spacing:.32em;
+  text-transform:uppercase;color:var(--muted);animation:bpop .8s .12s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes bpop{from{opacity:0;transform:translateY(16px) scale(.96);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+#banner.ok .bg{color:var(--ok);text-shadow:0 0 60px rgba(47,224,141,.6)}
+#banner.bad .bg{color:var(--bad);text-shadow:0 0 60px rgba(255,90,106,.5)}
+#banner.net .bg{color:var(--net);text-shadow:0 0 60px rgba(47,240,200,.55)}
+
+#alert{
+  display:none;align-items:center;gap:11px;
+  font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--bad);padding:11px 20px;border-radius:999px;
+  border:.5px solid rgba(255,90,106,.45);background:rgba(255,90,106,.09);
+  box-shadow:0 0 40px -12px rgba(255,90,106,.8);
+  animation:alertIn .5s cubic-bezier(.16,1,.3,1) both;
+}
+#alert.on{display:flex}
+#alert .pip{width:6px;height:6px;border-radius:50%;background:currentColor;
+  box-shadow:0 0 10px currentColor;animation:flick 1.2s infinite;flex:none}
+#alert .sub{color:var(--muted);font-weight:400;letter-spacing:.13em}
+@keyframes alertIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+#status{
+  font-family:var(--mono);font-size:10px;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--muted);text-align:center;min-height:13px;transition:color .4s ease;
+}
+#status .hl{color:var(--net)}
+#caption{
+  font-size:13.5px;color:var(--muted);text-align:center;max-width:640px;line-height:1.55;
+  opacity:0;transition:opacity .6s ease;font-weight:400;
+}
+#caption.on{opacity:1}
+#caption b{color:var(--ink);font-weight:600}
+#controls{display:flex;gap:9px;flex-wrap:wrap;justify-content:center}
+/* MD3 buttons. Every variant is a pill; hover/press are opacity state
+   layers over the base colour, not a different colour. */
+.btn{
+  position:relative;overflow:hidden;isolation:isolate;
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:40px;padding:0 24px;border-radius:999px;cursor:pointer;white-space:nowrap;
+  font-family:var(--sans);font-size:14px;font-weight:500;letter-spacing:.01em;
+  color:var(--md-on-secondary-container);background:var(--md-secondary-container);
+  border:none;
+  transition:background var(--md-dur) var(--md-ease),color var(--md-dur) var(--md-ease),
+             box-shadow var(--md-dur) var(--md-ease),transform var(--md-dur-fast) var(--md-ease);
+}
+.btn::before{content:"";position:absolute;inset:0;z-index:-1;background:currentColor;
+  opacity:0;transition:opacity var(--md-dur-fast) var(--md-ease)}
+.btn:hover:not(:disabled)::before{opacity:.08}
+.btn:focus-visible:not(:disabled)::before{opacity:.10}
+.btn:active:not(:disabled)::before{opacity:.12}
+.btn:active:not(:disabled){transform:scale(.95)}
+.btn:disabled{opacity:.38;cursor:not-allowed}
+
+/* filled — the primary action */
+.btn.primary{color:var(--md-on-primary);background:var(--md-primary)}
+.btn.primary:hover:not(:disabled){box-shadow:var(--md-elev-1)}
+.btn.primary.hint{animation:hint 2.4s var(--md-ease) infinite}
+@keyframes hint{0%,100%{box-shadow:var(--md-elev-1)}50%{box-shadow:var(--md-elev-3)}}
+
+/* outlined — neutral secondary actions */
+.btn.danger,.btn#bReplay{
+  background:transparent;color:var(--md-primary);
+  box-shadow:inset 0 0 0 1px var(--md-outline);
+}
+.btn.danger{color:var(--md-error);box-shadow:inset 0 0 0 1px var(--md-outline)}
+.btn.danger:hover:not(:disabled){box-shadow:inset 0 0 0 1px var(--md-error)}
+
+/* tonal accent — the "do this next" state */
+.btn.next{color:var(--md-on-tertiary-container);background:var(--md-tertiary-container)}
+
+/* ============================================================
+   SITE — navigation, sections, atmosphere
+   ============================================================ */
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  min-height:100%;background:var(--md-surface);color:var(--md-on-surface);
+  font-family:var(--sans);font-weight:400;-webkit-font-smoothing:antialiased;
+  overflow-x:hidden;line-height:1.5;
+  transition:background var(--md-dur) var(--md-ease),color var(--md-dur) var(--md-ease);
+}
+/* MD3 focus indicator, applied once for every interactive element */
+a:focus-visible,button:focus-visible{
+  outline:2px solid var(--md-primary);outline-offset:2px;border-radius:999px;
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    animation-duration:.01ms !important;animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;scroll-behavior:auto !important;
+  }
+}
+
+/* atmosphere --------------------------------------------------------- */
+#atmos{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  background:var(--md-surface);
+  transition:background var(--md-dur) var(--md-ease);
+}
+/* Signature MD3 organic shapes: heavily blurred, partly off-canvas,
+   blended into the surface rather than sitting on top of it. */
+.orb{position:absolute;display:block;filter:blur(64px);
+  mix-blend-mode:var(--md-blend);opacity:var(--md-orb);
+  transition:opacity var(--md-dur-slow) var(--md-ease)}
+.orb.o1{width:40vw;height:32vw;top:-12vw;right:-10vw;
+  background:var(--md-primary);
+  border-radius:100px 100px 100px 20px;transform:rotate(-12deg)}
+.orb.o2{width:32vw;height:32vw;top:52vh;left:-14vw;
+  background:var(--md-tertiary);border-radius:50%}
+.orb.o3{width:44vw;height:26vw;bottom:-14vw;right:-8vw;
+  background:var(--md-secondary-container);
+  border-radius:100px 20px 100px 100px;transform:rotate(8deg)}
+#grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.4;
+  background-image:radial-gradient(var(--grain) .5px,transparent .5px);
+  background-size:3px 3px}
+
+main{position:relative;z-index:2}
+
+/* nav ---------------------------------------------------------------- */
+#nav{
+  position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:100;
+  display:flex;align-items:center;gap:clamp(8px,1.6vw,24px);
+  padding:8px 8px 8px 18px;border-radius:999px;
+  background:var(--glass);border:1px solid var(--md-outline-variant);
+  -webkit-backdrop-filter:blur(20px) saturate(1.4);
+  backdrop-filter:blur(20px) saturate(1.4);
+  box-shadow:var(--md-elev-2);
+  transition:padding var(--md-dur-slow) var(--md-ease),
+             background var(--md-dur) var(--md-ease),
+             box-shadow var(--md-dur) var(--md-ease),
+             top var(--md-dur-slow) var(--md-ease);
+  max-width:calc(100vw - 20px);
+}
+#nav.tight{top:10px;padding:6px 6px 6px 15px;
+  background:var(--glass-tight);box-shadow:var(--md-elev-3)}
+
+.brandmark{
+  display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--md-on-surface);
+  font-size:15px;font-weight:500;letter-spacing:0;white-space:nowrap;flex:none;
+}
+.brandmark svg{display:block;flex:none;transition:transform .6s cubic-bezier(.2,1.4,.4,1)}
+.brandmark:hover svg{transform:rotate(90deg)}
+
+.navlinks{position:relative;display:flex;align-items:center;gap:2px}
+.navlinks a{
+  position:relative;z-index:2;text-decoration:none;color:var(--md-on-surface-variant);
+  font-size:13px;font-weight:500;letter-spacing:.01em;
+  padding:10px 14px;border-radius:999px;white-space:nowrap;overflow:hidden;isolation:isolate;
+  transition:color var(--md-dur) var(--md-ease);
+}
+/* MD3 state layer: an opacity overlay, never a colour swap */
+.navlinks a::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;
+  background:currentColor;opacity:0;transition:opacity var(--md-dur-fast) var(--md-ease)}
+.navlinks a:hover::before{opacity:.08}
+.navlinks a:active::before{opacity:.12}
+.navlinks a:hover,.navlinks a.on{color:var(--md-on-secondary-container)}
+#navpill{
+  position:absolute;z-index:1;top:0;left:0;height:100%;border-radius:999px;
+  background:var(--md-secondary-container);
+  opacity:0;transform:translateX(0);width:0;
+  transition:transform var(--md-dur-slow) var(--md-ease),
+             width var(--md-dur-slow) var(--md-ease),
+             opacity var(--md-dur-fast) var(--md-ease),
+             background var(--md-dur) var(--md-ease);
+}
+
+/* layout ------------------------------------------------------------- */
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 clamp(18px,4vw,30px)}
+section{position:relative;scroll-margin-top:92px}
+.sec{padding:clamp(96px,13vh,150px) 0}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:9px;
+  font-size:12px;font-weight:500;letter-spacing:.10em;text-transform:uppercase;
+  color:var(--md-primary);margin-bottom:26px;
+}
+.eyebrow::before{content:"";width:22px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--pur))}
+/* MD3 headline-large / body-large */
+h2.sh{font-size:clamp(26px,3.4vw,40px);font-weight:500;letter-spacing:-.01em;line-height:1.22;
+  color:var(--md-on-surface)}
+.lede{margin-top:20px;max-width:62ch;font-size:clamp(15px,1.5vw,20px);font-weight:400;
+  color:var(--md-on-surface-variant);line-height:1.55}
+.lede b{color:var(--md-on-surface);font-weight:500}
+
+/* scroll reveal */
+.rv{opacity:0;transform:translateY(24px);
+  transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1)}
+.rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.rv{opacity:1;transform:none}}
+
+/* ── ABOUT ───────────────────────────────────────────────────────────── */
+#about{min-height:100svh;display:flex;align-items:center;padding-top:120px;padding-bottom:70px}
+#about > .wrap{width:100%}
+.hero h1{
+  font-size:clamp(42px,7vw,84px);font-weight:500;letter-spacing:-.02em;line-height:1.05;
+}
+.hero h1 .wm{
+  background:linear-gradient(96deg,var(--md-on-surface) 2%,var(--md-primary) 88%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.tagline{
+  margin-top:clamp(14px,1.8vw,22px);font-size:clamp(18px,2.6vw,32px);font-weight:400;
+  letter-spacing:0;line-height:1.25;color:var(--md-on-surface-variant);max-width:22ch;
+}
+
+/* flow strip */
+.strip{
+  position:relative;margin-top:clamp(46px,7vw,74px);
+  display:flex;align-items:flex-start;gap:0;
+  padding:30px 26px;border-radius:32px;
+  background:var(--md-surface-container);border:none;box-shadow:var(--md-elev-1);
+  transition:background var(--md-dur) var(--md-ease),box-shadow var(--md-dur) var(--md-ease);
+}
+.fnode{
+  position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:11px;
+  flex:none;width:clamp(86px,12vw,132px);text-align:center;
+}
+.fglyph{
+  width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
+  border:1px solid var(--md-outline-variant);background:var(--md-surface-container-high);
+  color:var(--md-on-surface-variant);transition:all var(--md-dur) var(--md-ease);
+}
+.fnode.off .fglyph{color:var(--bad);border-color:rgba(255,90,106,.32);
+  box-shadow:0 0 24px -10px rgba(255,90,106,.8)}
+.fnode.on .fglyph{color:var(--net);border-color:rgba(47,240,200,.4);
+  box-shadow:0 0 26px -8px rgba(47,240,200,.85)}
+.fnode.gate .fglyph{color:var(--pur);border-color:rgba(139,124,255,.42);
+  box-shadow:0 0 26px -8px rgba(139,124,255,.9)}
+.fnode span{font-family:var(--mono);font-size:8.5px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--muted);line-height:1.5}
+.fwire{
+  position:relative;flex:1 1 auto;min-width:44px;height:1px;margin-top:19px;
+  background:repeating-linear-gradient(90deg,rgba(92,140,255,.62) 0 4px,transparent 4px 10px);
+  box-shadow:0 0 9px rgba(92,140,255,.3);
+}
+.fwire.net{background:linear-gradient(90deg,rgba(47,240,200,.6),rgba(139,124,255,.6));
+  box-shadow:0 0 9px rgba(47,240,200,.3)}
+.fwire i{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  font-family:var(--mono);font-size:7.5px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--md-on-surface-variant);font-style:normal;background:var(--md-surface-container-highest);
+  padding:4px 8px;border-radius:99px;border:1px solid var(--md-outline-variant);white-space:nowrap;
+}
+.fpk{
+  position:absolute;top:34px;left:0;z-index:3;width:22px;height:22px;border-radius:7px;
+  background:linear-gradient(150deg,#ffe0a0,#ffb545);
+  box-shadow:0 0 20px rgba(255,180,70,.75),inset 0 1px 0 rgba(255,255,255,.6);
+  display:grid;place-items:center;opacity:0;
+  transition:opacity .35s ease,background .5s ease,box-shadow .5s ease;
+}
+.fpk.ok{background:linear-gradient(150deg,#b6ffdc,#3fe89b);
+  box-shadow:0 0 24px rgba(47,224,141,.8),inset 0 1px 0 rgba(255,255,255,.6)}
+.fpk.ok svg{color:#00381f}
+.fpk svg{display:block;color:#4a2c00}
+/* without / with */
+.compare{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
+.cmp{
+  display:flex;align-items:center;gap:12px;padding:12px 20px;border-radius:999px;
+  border:none;background:var(--md-surface-container-high);
+  font-size:13px;font-weight:500;letter-spacing:.01em;
+  color:var(--md-on-surface-variant);
+  transition:background var(--md-dur) var(--md-ease),color var(--md-dur) var(--md-ease);
+}
+.cmp b{font-weight:500}
+.cmp.bad{background:var(--md-error-container);color:var(--md-on-error-container)}
+.cmp.bad b{color:var(--md-on-error-container)}
+.cmp.good{background:var(--md-secondary-container);color:var(--md-on-secondary-container)}
+.cmp.good b{color:var(--md-on-secondary-container)}
+.cmp .ar{opacity:.6}
+
+/* ── HOW IT WORKS ────────────────────────────────────────────────────── */
+.howgrid{margin-top:clamp(44px,6vw,64px)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));
+  gap:clamp(12px,1.4vw,18px);align-items:stretch}
+.step{
+  display:flex;gap:16px;padding:20px 22px;border-radius:var(--md-r-lg);
+  border:none;background:var(--md-surface-container);box-shadow:var(--md-elev-1);
+  transition:background var(--md-dur) var(--md-ease),box-shadow var(--md-dur) var(--md-ease),
+             transform var(--md-dur) var(--md-ease);
+}
+.step:hover{transform:scale(1.02);box-shadow:var(--md-elev-2);
+  background:var(--md-surface-container-high)}
+.step:hover .n{background:var(--md-primary);color:var(--md-on-primary)}
+.step .n{
+  flex:none;width:28px;height:28px;border-radius:999px;display:grid;place-items:center;
+  font-size:13px;font-weight:500;
+  background:var(--md-surface-container-highest);color:var(--md-on-surface-variant);
+  border:none;transition:background var(--md-dur) var(--md-ease),color var(--md-dur) var(--md-ease);
+}
+.step h3{font-size:16px;font-weight:500;letter-spacing:0;color:var(--md-on-surface-variant);
+  transition:color var(--md-dur) var(--md-ease)}
+.step p{margin-top:4px;font-size:14px;color:var(--md-on-surface-variant);opacity:.8;
+  line-height:1.5;max-width:38ch}
+
+/* ── FOR WHOM ────────────────────────────────────────────────────────── */
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(14px,1.8vw,22px);
+  margin-top:clamp(40px,5vw,58px)}
+.card{
+  position:relative;padding:26px 24px 28px;border-radius:var(--md-r-lg);overflow:hidden;
+  background:var(--md-surface-container);border:none;
+  box-shadow:var(--md-elev-1);
+  transition:transform var(--md-dur) var(--md-ease),box-shadow var(--md-dur) var(--md-ease),
+             background var(--md-dur) var(--md-ease);
+}
+.card::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;
+  background:var(--md-primary);transition:opacity var(--md-dur) var(--md-ease)}
+.card:hover{transform:scale(1.02);box-shadow:var(--md-elev-2)}
+.card:hover::before{opacity:.05}
+.card > *{position:relative;z-index:1}
+.card .vis{position:relative;height:112px;margin:-4px -4px 20px;
+  border-radius:var(--md-r-sm);overflow:hidden;
+  background:var(--md-surface-container-high);border:none}
+.card .vis svg{position:absolute;inset:0;width:100%;height:100%}
+.card .k{font-size:11px;font-weight:500;letter-spacing:.10em;text-transform:uppercase;
+  color:var(--md-primary);margin-bottom:10px;display:block}
+.card h3{font-size:20px;font-weight:500;letter-spacing:0;color:var(--md-on-surface)}
+.card p{margin-top:9px;font-size:14px;color:var(--md-on-surface-variant);line-height:1.55}
+.dash{stroke-dasharray:3 6;animation:dashrun 1.4s linear infinite}
+@keyframes dashrun{to{stroke-dashoffset:-18}}
+.pk2{animation:pk2 3.4s cubic-bezier(.5,0,.3,1) infinite}
+@keyframes pk2{0%,8%{opacity:0}12%{opacity:1}88%{opacity:1}100%{opacity:0}}
+
+.note{
+  margin-top:clamp(26px,3.4vw,38px);padding:26px 28px;border-radius:var(--md-r-xl);
+  border:none;background:var(--md-secondary-container);
+  font-size:16px;color:var(--md-on-secondary-container);line-height:1.55;
+  transition:background var(--md-dur) var(--md-ease),color var(--md-dur) var(--md-ease);
+}
+.note b{color:var(--md-on-secondary-container);font-weight:500}
+
+/* ── BUILT WITH ─---------------------------------------------------- */
+.planlabel{
+  display:inline-flex;align-items:center;gap:10px;margin-top:26px;
+  font-size:13px;font-weight:500;letter-spacing:.01em;
+  color:var(--md-on-primary-container);
+  padding:8px 16px;border-radius:8px;border:none;
+  background:var(--md-primary-container);
+  transition:background var(--md-dur) var(--md-ease),color var(--md-dur) var(--md-ease);
+}
+.planlabel i{width:6px;height:6px;border-radius:50%;flex:none;background:var(--pur);
+  box-shadow:0 0 10px var(--pur)}
+
+.stack{position:relative;margin-top:clamp(36px,5vw,52px);padding-left:56px}
+.spine{position:absolute;left:19px;top:18px;bottom:26px;width:2px;overflow:hidden;
+  background:linear-gradient(180deg,var(--md-primary),var(--md-tertiary));opacity:.45}
+.spine::after{content:"";position:absolute;left:-1px;width:4px;height:80px;border-radius:3px;
+  background:linear-gradient(180deg,transparent,var(--gold),transparent);
+  opacity:.85;animation:spineRun 6.5s cubic-bezier(.55,0,.35,1) infinite}
+@keyframes spineRun{0%{top:-90px}60%,100%{top:100%}}
+@media (prefers-reduced-motion:reduce){.spine::after{display:none}}
+
+.layer{position:relative;padding:20px 0 22px}
+.layer + .layer{border-top:1px solid var(--md-outline-variant)}
+.layer::before{content:"";position:absolute;left:-43px;top:30px;width:12px;height:12px;
+  border-radius:50%;background:var(--md-surface);border:2px solid var(--md-primary);
+  box-shadow:0 0 0 4px var(--md-surface)}
+.lhead{display:flex;align-items:center;gap:13px;margin-bottom:15px}
+.lico{width:36px;height:36px;border-radius:999px;flex:none;display:grid;place-items:center;
+  color:var(--md-on-primary-container);border:none;background:var(--md-primary-container);
+  transition:background var(--md-dur) var(--md-ease),color var(--md-dur) var(--md-ease)}
+.ltitle{font-size:12px;font-weight:500;letter-spacing:.10em;text-transform:uppercase;
+  color:var(--md-on-surface)}
+.lsub{margin-top:4px;font-size:14px;color:var(--md-on-surface-variant)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+/* MD3 assist chip */
+.chip{
+  position:relative;overflow:hidden;isolation:isolate;
+  display:inline-flex;align-items:center;min-height:32px;cursor:pointer;
+  font-family:var(--sans);font-size:14px;font-weight:500;letter-spacing:.01em;
+  color:var(--md-on-surface);padding:0 16px;border-radius:8px;
+  border:1px solid var(--md-outline);background:transparent;
+  transition:background var(--md-dur) var(--md-ease),color var(--md-dur) var(--md-ease),
+             border-color var(--md-dur) var(--md-ease),box-shadow var(--md-dur) var(--md-ease),
+             transform var(--md-dur-fast) var(--md-ease);
+}
+.chip::before{content:"";position:absolute;inset:0;z-index:-1;background:currentColor;
+  opacity:0;transition:opacity var(--md-dur-fast) var(--md-ease)}
+.chip:hover::before{opacity:.08}
+.chip:active{transform:scale(.95)}
+.chip.open{
+  color:var(--md-on-secondary-container);background:var(--md-secondary-container);
+  border-color:transparent;box-shadow:var(--md-elev-1);
+}
+.ldesc{
+  display:grid;grid-template-rows:0fr;opacity:0;margin-top:0;
+  transition:grid-template-rows .45s cubic-bezier(.16,1,.3,1),opacity .35s ease,margin-top .45s ease;
+  font-size:13px;color:var(--muted);line-height:1.6;
+}
+.ldesc.on{grid-template-rows:1fr;opacity:1;margin-top:13px}
+.ldesc > span{overflow:hidden;min-height:0}
+.ldesc b{color:var(--ink);font-weight:600}
+@media (max-width:640px){
+  .stack{padding-left:34px}
+  .spine{left:8px}
+  .layer::before{left:-32px;width:10px;height:10px}
+  .chip{font-size:9px;padding:8px 11px;letter-spacing:.07em}
+}
+
+/* ── DEMO ────────────────────────────────────────────────────────────── */
+.panel{ /* extra-extra-large radius: this is the hero container of the page */
+  margin-top:clamp(36px,5vw,52px);border-radius:var(--md-r-xxl);overflow:hidden;
+  background:var(--md-surface-container);border:none;box-shadow:var(--md-elev-3);
+  transition:background var(--md-dur) var(--md-ease),box-shadow var(--md-dur) var(--md-ease);
+}
+.phead{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  padding:16px 22px;border-bottom:1px solid var(--md-outline-variant);
+}
+.phead .pt{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:500;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--md-on-surface-variant)}
+.phead .pt .live{width:6px;height:6px;border-radius:50%;background:var(--ok);
+  box-shadow:0 0 10px var(--ok);animation:beat 2.4s infinite}
+#stage{position:relative;width:100%;height:clamp(470px,62vh,620px);overflow:hidden}
+#flow{position:absolute;left:50%;top:15px;transform:translateX(-50%);z-index:14;
+  display:flex;align-items:center;max-width:96%;overflow:hidden}
+#tabs{display:flex;gap:6px}
+#bottom{display:flex;flex-direction:column;align-items:center;gap:16px;
+  padding:22px 20px 26px;border-top:1px solid var(--md-outline-variant);
+  background:var(--md-surface-container-low);
+  transition:background var(--md-dur) var(--md-ease)}
+#caption{font-size:13.5px;color:var(--muted);text-align:center;max-width:640px;line-height:1.55;
+  opacity:0;transition:opacity .6s ease}
+#caption.on{opacity:1}
+#caption b{color:var(--ink);font-weight:600}
+
+/* footer */
+footer{position:relative;z-index:2;padding:54px 0 60px;
+  border-top:1px solid var(--md-outline-variant);margin-top:40px}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+
+/* responsive --------------------------------------------------------- */
+@media (max-width:900px){
+  .cards{grid-template-columns:1fr}
+  .card .vis{height:130px}
+}
+@media (max-width:760px){
+  .strip{flex-direction:column;gap:0;padding:24px 18px;align-items:flex-start}
+  .fnode{width:100%;flex-direction:row;justify-content:flex-start;gap:14px;text-align:left}
+  .fwire{width:1px;height:30px;min-width:0;margin-left:19px;margin-top:0;flex:none;
+    background:repeating-linear-gradient(180deg,rgba(92,140,255,.5) 0 4px,transparent 4px 10px)}
+  .fwire.net{background:linear-gradient(180deg,rgba(47,240,200,.55),rgba(139,124,255,.55))}
+  .fwire i{left:34px;top:50%;transform:translateY(-50%)}
+  .fpk{display:none}
+}
+@media (max-width:760px){
+  #flow{display:none !important}       /* the rail cannot shrink; status line narrates instead */
+  .phead{justify-content:center}
+}
+@media (max-width:640px){
+  #nav{gap:6px;padding:7px 8px 7px 12px}
+  .brandmark span{display:none}
+  .navlinks a{font-size:9px;letter-spacing:.06em;padding:8px 8px}
+  .navlinks{gap:0}
+  #stage{height:clamp(420px,58vh,520px)}
+}
+</style>
+</head>
+<body>
+
+<div id="atmos" aria-hidden="true">
+  <span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span>
+</div>
+<div id="grain"></div>
+
+<nav id="nav">
+  <a class="brandmark" href="#about">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <defs><linearGradient id="lg" x1="0" y1="0" x2="24" y2="24">
+        <stop offset="0" stop-color="#a89bff"/><stop offset="1" stop-color="#2ff0c8"/>
+      </linearGradient></defs>
+      <path d="M12 3.4 5.2 8.2v7.6L12 20.6l6.8-4.8V8.2Z" stroke="url(#lg)" stroke-width="1.3"
+            stroke-linejoin="round" fill="rgba(139,124,255,.10)"/>
+      <path d="M5.2 8.2 12 12l6.8-3.8M12 12v8.6" stroke="url(#lg)" stroke-width="1.1" opacity=".75"/>
+      <circle cx="12" cy="12" r="2.1" fill="#2ff0c8"/>
+    </svg>
+    <span>BouncePay</span>
+  </a>
+  <div class="navlinks" id="navlinks">
+    <span id="navpill"></span>
+    <a href="#about" data-s="about">About</a>
+    <a href="#how"   data-s="how">How it works</a>
+    <a href="#whom"  data-s="whom">For whom</a>
+    <a href="#tech"  data-s="tech">Built with</a>
+    <a href="#demo"  data-s="demo">Demo</a>
+  </div>
+</nav>
+
+<main>
+
+<!-- ═══ ABOUT ═══════════════════════════════════════════════════════════ -->
+<section id="about">
+  <div class="wrap hero">
+    <span class="eyebrow rv">Offline payments</span>
+    <h1 class="rv"><span class="wm">BouncePay</span></h1>
+    <p class="tagline rv">Payments that bounce until they connect.</p>
+    <p class="lede rv">
+      Your phone doesn't need internet — your payment just needs a path to it. BouncePay
+      bounces it from one nearby device to the next over Bluetooth, until it reaches one
+      that is <b>online</b>.
+    </p>
+
+    <div class="strip rv">
+      <div class="fnode off">
+        <div class="fglyph">
+          <svg width="15" height="20" viewBox="0 0 15 20" fill="none">
+            <rect x=".7" y=".7" width="13.6" height="18.6" rx="2.6" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M4 6.5 11 13.5M11 6.5 4 13.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span>Disconnected<br>phone</span>
+      </div>
+      <div class="fwire"><i>Bluetooth</i></div>
+      <div class="fnode">
+        <div class="fglyph">
+          <svg width="20" height="18" viewBox="0 0 20 18" fill="none">
+            <circle cx="4" cy="5" r="2.2" stroke="currentColor" stroke-width="1.2"/>
+            <circle cx="16" cy="5" r="2.2" stroke="currentColor" stroke-width="1.2"/>
+            <circle cx="10" cy="13" r="2.2" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M6 6.2 8.6 11.4M13.9 6.2 11.4 11.4M6.2 5h7.6" stroke="currentColor"
+                  stroke-width="1.1" opacity=".65"/>
+          </svg>
+        </div>
+        <span>Nearby<br>devices</span>
+      </div>
+      <div class="fwire"><i>Bluetooth</i></div>
+      <div class="fnode on">
+        <div class="fglyph">
+          <svg width="20" height="16" viewBox="0 0 20 16" fill="none">
+            <path d="M1.4 5.2a12 12 0 0 1 17.2 0M4.6 8.6a7.6 7.6 0 0 1 10.8 0" stroke="currentColor"
+                  stroke-width="1.3" stroke-linecap="round"/>
+            <circle cx="10" cy="12.6" r="1.7" fill="currentColor"/>
+          </svg>
+        </div>
+        <span>Device with<br>internet</span>
+      </div>
+      <div class="fwire net"><i>Internet</i></div>
+      <div class="fnode gate">
+        <div class="fglyph">
+          <svg width="21" height="14" viewBox="0 0 21 14" fill="none">
+            <path d="M5.6 12.4h10a4 4 0 0 0 .6-7.9A5.2 5.2 0 0 0 7.4 3.2 3.8 3.8 0 0 0 5.6 12.4Z"
+                  stroke="currentColor" stroke-width="1.2" fill="rgba(139,124,255,.12)"/>
+          </svg>
+        </div>
+        <span>Payment<br>gateway</span>
+      </div>
+      <div class="fpk">
+        <svg width="10" height="11" viewBox="0 0 15 17" fill="none">
+          <rect x="1.2" y="7" width="12.6" height="9" rx="2.4" fill="currentColor"/>
+          <path d="M4.2 7V4.8a3.3 3.3 0 0 1 6.6 0V7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="compare rv">
+      <div class="cmp bad"><span>Without BouncePay</span><span class="ar">→</span><b>Payment failed</b></div>
+      <div class="cmp good"><span>With BouncePay</span><span class="ar">→</span><b>₹250 settled</b></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ HOW IT WORKS ════════════════════════════════════════════════════ -->
+<section id="how" class="sec">
+  <div class="wrap">
+    <span class="eyebrow rv">How it works</span>
+    <h2 class="sh rv">The payment finds its own way out.</h2>
+    <p class="lede rv">An encrypted packet is created offline, carried hop by hop over Bluetooth,
+      and handed to the first device that can reach the internet.</p>
+
+    <div class="howgrid">
+      <div class="steps rv" id="steps">
+        <div class="step" data-i="0"><div class="n">1</div><div>
+          <h3>Create payment</h3><p>The buyer signs ₹250 offline. An encrypted packet is produced on the device.</p></div></div>
+        <div class="step" data-i="1"><div class="n">2</div><div>
+          <h3>Find nearby relay</h3><p>BouncePay discovers phones in Bluetooth range — no internet required.</p></div></div>
+        <div class="step" data-i="2"><div class="n">3</div><div>
+          <h3>Store &amp; forward</h3><p>A relay holds the sealed packet and carries it until a better path appears.</p></div></div>
+        <div class="step" data-i="3"><div class="n">4</div><div>
+          <h3>Reach internet bridge</h3><p>The first device with connectivity becomes the bridge to the network.</p></div></div>
+        <div class="step" data-i="4"><div class="n">5</div><div>
+          <h3>Settle payment</h3><p>The gateway verifies the signature and settles. The receipt returns the same way.</p></div></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOR WHOM ════════════════════════════════════════════════════════ -->
+<section id="whom" class="sec">
+  <div class="wrap">
+    <span class="eyebrow rv">For whom</span>
+    <h2 class="sh rv">Where a missing bar of signal costs a sale.</h2>
+
+    <div class="cards">
+      <div class="card rv">
+        <div class="vis">
+          <svg viewBox="0 0 260 112" fill="none" preserveAspectRatio="xMidYMid slice">
+            <g stroke="rgba(150,170,230,.28)" stroke-width="1" class="dash">
+              <path d="M52 78 96 62M96 62 140 70M140 70 186 48"/>
+            </g>
+            <g fill="rgba(255,90,106,.75)">
+              <circle cx="30" cy="46" r="3"/><circle cx="68" cy="34" r="3"/><circle cx="112" cy="86" r="3"/>
+              <circle cx="150" cy="30" r="3"/><circle cx="84" cy="94" r="3"/><circle cx="196" cy="88" r="3"/>
+              <circle cx="222" cy="52" r="3"/><circle cx="172" cy="92" r="3"/><circle cx="44" cy="18" r="3"/>
+              <circle cx="126" cy="46" r="3"/>
+            </g>
+            <g fill="rgba(92,140,255,.95)">
+              <circle cx="52" cy="78" r="4.4"/><circle cx="96" cy="62" r="4.4"/><circle cx="140" cy="70" r="4.4"/>
+            </g>
+            <circle cx="186" cy="48" r="6" fill="#2ff0c8"/>
+            <circle cx="186" cy="48" r="11" stroke="rgba(47,240,200,.4)" stroke-width="1"/>
+            <rect class="pk2" x="115" y="60" width="11" height="11" rx="3" fill="#ffb545"/>
+          </svg>
+        </div>
+        <span class="k">01</span>
+        <h3>Crowded venues</h3>
+        <p>Concerts, stadiums, festivals and expos, where thousands of phones congest the cell network at once.</p>
+      </div>
+
+      <div class="card rv">
+        <div class="vis">
+          <svg viewBox="0 0 260 112" fill="none" preserveAspectRatio="xMidYMid slice">
+            <path d="M0 96 40 74 84 88 128 58 172 76 216 44 260 62" stroke="rgba(150,170,230,.16)" stroke-width="1.2"/>
+            <g stroke="rgba(150,170,230,.28)" stroke-width="1" class="dash">
+              <path d="M46 62 108 50M108 50 178 40"/>
+            </g>
+            <g fill="rgba(255,90,106,.75)"><circle cx="46" cy="62" r="4"/><circle cx="108" cy="50" r="4"/></g>
+            <circle cx="178" cy="40" r="5.6" fill="#2ff0c8"/>
+            <path d="M214 46V22" stroke="rgba(139,124,255,.55)" stroke-width="1.3"/>
+            <path d="M208 26a9 9 0 0 1 12 0M204 21a16 16 0 0 1 20 0" stroke="rgba(139,124,255,.55)"
+                  stroke-width="1.2" stroke-linecap="round"/>
+            <rect class="pk2" x="96" y="43" width="11" height="11" rx="3" fill="#ffb545"/>
+          </svg>
+        </div>
+        <span class="k">02</span>
+        <h3>Remote commerce</h3>
+        <p>Remote shops, trekking routes, rural markets and camps where connectivity comes and goes.</p>
+      </div>
+
+      <div class="card rv">
+        <div class="vis">
+          <svg viewBox="0 0 260 112" fill="none" preserveAspectRatio="xMidYMid slice">
+            <g stroke="rgba(150,170,230,.28)" stroke-width="1" class="dash"><path d="M64 66 130 56M130 56 194 46"/></g>
+            <g stroke="rgba(255,90,106,.8)" stroke-width="1.4">
+              <rect x="52" y="46" width="24" height="38" rx="5"/>
+              <rect x="118" y="36" width="24" height="38" rx="5"/>
+            </g>
+            <path d="M58 78h12M124 68h12" stroke="rgba(255,90,106,.5)" stroke-width="1.2"/>
+            <text x="64" y="98" fill="rgba(255,90,106,.85)" font-size="7.5" font-family="monospace"
+                  text-anchor="middle" letter-spacing="1">OFF</text>
+            <text x="130" y="88" fill="rgba(255,90,106,.85)" font-size="7.5" font-family="monospace"
+                  text-anchor="middle" letter-spacing="1">OFF</text>
+            <rect x="182" y="26" width="24" height="38" rx="5" stroke="#2ff0c8" stroke-width="1.4"/>
+            <circle cx="194" cy="46" r="2.6" fill="#2ff0c8"/>
+            <text x="194" y="78" fill="rgba(47,240,200,.9)" font-size="7.5" font-family="monospace"
+                  text-anchor="middle" letter-spacing="1">ON</text>
+            <rect class="pk2" x="120" y="46" width="11" height="11" rx="3" fill="#ffb545"/>
+          </svg>
+        </div>
+        <span class="k">03</span>
+        <h3>Connectivity dead zones</h3>
+        <p>Basements, back rooms and blind spots where neither side has signal — but someone a few metres away does.</p>
+      </div>
+    </div>
+
+    <div class="note rv">
+      <b>BouncePay does not create connectivity out of nothing.</b> It uses connectivity that already
+      exists somewhere nearby, and carries the payment toward it — so a sale never depends on the
+      one device holding the money.
+    </div>
+  </div>
+</section>
+
+<!-- BUILT WITH -->
+<section id="tech" class="sec">
+  <div class="wrap">
+    <span class="eyebrow rv">Built with</span>
+    <h2 class="sh rv">The stack behind the hop.</h2>
+    <p class="lede rv">Five layers carry a payment from an offline phone all the way to settlement.
+      Tap anything to see what it does.</p>
+
+    <div class="planlabel rv"><i></i>Planned implementation</div>
+
+    <div class="stack">
+      <div class="spine"></div>
+      <div class="layer rv">
+        <div class="lhead">
+          <span class="lico"><svg width="15" height="17" viewBox="0 0 15 17" fill="none"><rect x="1" y="1" width="13" height="15" rx="2.6" stroke="currentColor" stroke-width="1.3"/><path d="M6 3.6h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></span>
+          <div><div class="ltitle">Device layer</div><div class="lsub">Where the payment is created</div></div>
+        </div>
+        <div class="chips"><button class="chip" type="button" aria-expanded="false" data-n="Android" data-d="Target platform for the field app — the client that creates, carries and hands off a payment.">Android</button><button class="chip" type="button" aria-expanded="false" data-n="Kotlin" data-d="Language for the native client — coroutines map cleanly onto asynchronous BLE callbacks.">Kotlin</button><button class="chip" type="button" aria-expanded="false" data-n="Bluetooth Low Energy" data-d="The radio that moves a packet between two phones with no network in between.">Bluetooth Low Energy</button></div>
+        <div class="ldesc"><span></span></div>
+      </div>
+      <div class="layer rv">
+        <div class="lhead">
+          <span class="lico"><svg width="18" height="17" viewBox="0 0 18 17" fill="none"><circle cx="3.4" cy="4" r="2.1" stroke="currentColor" stroke-width="1.2"/><circle cx="14.6" cy="4" r="2.1" stroke="currentColor" stroke-width="1.2"/><circle cx="9" cy="13" r="2.1" stroke="currentColor" stroke-width="1.2"/><path d="M5.4 5.2 7.6 11M12.6 5.2 10.4 11M5.5 4h7" stroke="currentColor" stroke-width="1.1" opacity=".6"/></svg></span>
+          <div><div class="ltitle">Mesh / transport layer</div><div class="lsub">How the packet finds a way out</div></div>
+        </div>
+        <div class="chips"><button class="chip" type="button" aria-expanded="false" data-n="BLE device discovery" data-d="Advertise and scan for peers in range, so a phone always knows who it could hand off to.">BLE device discovery</button><button class="chip" type="button" aria-expanded="false" data-n="Peer-to-peer communication" data-d="Device to device with no server in the middle — the property that makes an offline payment possible.">Peer-to-peer communication</button><button class="chip" type="button" aria-expanded="false" data-n="Store-carry-forward" data-d="A relay holds the packet while no bridge is in range, then forwards it the moment a path returns.">Store-carry-forward</button><button class="chip" type="button" aria-expanded="false" data-n="Opportunistic networking" data-d="The route is whoever happens to be reachable, recomputed per payment — never a fixed path.">Opportunistic networking</button><button class="chip" type="button" aria-expanded="false" data-n="Local packet storage" data-d="A durable on-device queue so a held packet survives an app restart or a flat battery.">Local packet storage</button></div>
+        <div class="ldesc"><span></span></div>
+      </div>
+      <div class="layer rv">
+        <div class="lhead">
+          <span class="lico"><svg width="15" height="17" viewBox="0 0 15 17" fill="none"><rect x="1.6" y="7" width="11.8" height="8.4" rx="2.2" stroke="currentColor" stroke-width="1.3"/><path d="M4.4 7V4.9a3.1 3.1 0 0 1 6.2 0V7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
+          <div><div class="ltitle">Security layer</div><div class="lsub">Why a stranger can carry your money</div></div>
+        </div>
+        <div class="chips"><button class="chip" type="button" aria-expanded="false" data-n="Public-key cryptography" data-d="Every device holds a keypair; the payment is signed at the source and never re-signed in transit.">Public-key cryptography</button><button class="chip" type="button" aria-expanded="false" data-n="Digital signatures" data-d="A relay can carry a packet it cannot read, alter, or spend.">Digital signatures</button><button class="chip" type="button" aria-expanded="false" data-n="Encryption" data-d="Payload sealed end to end, from the payer's device to the gateway.">Encryption</button><button class="chip" type="button" aria-expanded="false" data-n="Transaction IDs / nonces" data-d="A unique id per payment, so the gateway can recognise one it has already seen.">Transaction IDs / nonces</button><button class="chip" type="button" aria-expanded="false" data-n="Replay protection" data-d="A packet that arrives by three different routes still settles exactly once.">Replay protection</button></div>
+        <div class="ldesc"><span></span></div>
+      </div>
+      <div class="layer rv">
+        <div class="lhead">
+          <span class="lico"><svg width="18" height="16" viewBox="0 0 18 16" fill="none"><rect x="1.4" y="1.4" width="15.2" height="5" rx="1.8" stroke="currentColor" stroke-width="1.2"/><rect x="1.4" y="9.2" width="15.2" height="5" rx="1.8" stroke="currentColor" stroke-width="1.2"/><circle cx="4.6" cy="3.9" r="1" fill="currentColor"/><circle cx="4.6" cy="11.7" r="1" fill="currentColor"/></svg></span>
+          <div><div class="ltitle">Backend layer</div><div class="lsub">Where it becomes money</div></div>
+        </div>
+        <div class="chips"><button class="chip" type="button" aria-expanded="false" data-n="REST API" data-d="The bridge device hands the packet up over ordinary HTTPS — nothing exotic at the edge.">REST API</button><button class="chip" type="button" aria-expanded="false" data-n="Payment gateway" data-d="The existing rails that actually move the funds.">Payment gateway</button><button class="chip" type="button" aria-expanded="false" data-n="Transaction verification" data-d="Signature, integrity and duplicate checks before a payment is allowed to settle.">Transaction verification</button><button class="chip" type="button" aria-expanded="false" data-n="Settlement ledger" data-d="The authoritative record of what settled, when, and by which route.">Settlement ledger</button></div>
+        <div class="ldesc"><span></span></div>
+      </div>
+      <div class="layer rv">
+        <div class="lhead">
+          <span class="lico"><svg width="18" height="17" viewBox="0 0 18 17" fill="none"><circle cx="9" cy="8.5" r="3" stroke="currentColor" stroke-width="1.2"/><circle cx="2.6" cy="3.2" r="1.5" stroke="currentColor" stroke-width="1.1"/><circle cx="15.4" cy="3.2" r="1.5" stroke="currentColor" stroke-width="1.1"/><circle cx="2.6" cy="13.8" r="1.5" stroke="currentColor" stroke-width="1.1"/><circle cx="15.4" cy="13.8" r="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M3.9 4.3 6.6 6.6M14.1 4.3 11.4 6.6M3.9 12.7 6.6 10.4M14.1 12.7 11.4 10.4" stroke="currentColor" stroke-width="1" opacity=".55"/></svg></span>
+          <div><div class="ltitle">Intelligence layer</div><div class="lsub">Choosing who carries it</div></div>
+        </div>
+        <div class="chips"><button class="chip" type="button" aria-expanded="false" data-n="On-device relay selection" data-d="A breadth-first search over the live mesh picks the nearest phone that can genuinely reach the internet.">On-device relay selection</button><button class="chip" type="button" aria-expanded="false" data-n="Connectivity prediction" data-d="Learn when a device tends to regain signal, and prefer handing packets to it.">Connectivity prediction</button><button class="chip" type="button" aria-expanded="false" data-n="Local ML model" data-d="On-device scoring of which neighbour is worth carrying the packet, with no cloud round trip.">Local ML model</button></div>
+        <div class="ldesc"><span></span></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══ DEMO ════════════════════════════════════════════════════════════ -->
+<section id="demo" class="sec">
+  <div class="wrap">
+    <span class="eyebrow rv">Demo</span>
+    <h2 class="sh rv">Watch ₹250 cross a network with no internet.</h2>
+    <p class="lede rv">Cut the bridge mid-payment and the packet waits, sealed, on a relay.
+      Restore it and the payment completes on its own.</p>
+
+    <div class="panel rv">
+      <div class="phead">
+        <div class="pt"><span class="live"></span>Live simulation</div>
+        <div id="tabs">
+          <button class="tab sel" data-scene="campus"><span class="num">01</span>Campus shop</button>
+          <button class="tab" data-scene="crowd"><span class="num">02</span>Crowd network</button>
+        </div>
+      </div>
+
+      <div id="stage">
+        <canvas id="net"></canvas>
+        <div id="nodes"></div>
+        <div id="flow"></div>
+        <div id="verify">
+          <div class="vh"><span class="sp"></span><span>Verifying</span></div>
+          <div class="vr" data-i="0"><span class="ck">✓</span><span>Signature</span></div>
+          <div class="vr" data-i="1"><span class="ck">✓</span><span>Packet integrity</span></div>
+          <div class="vr" data-i="2"><span class="ck">✓</span><span>Duplicate check</span></div>
+        </div>
+        <div id="packet">
+          <div class="pk"><svg class="lock" width="15" height="17" viewBox="0 0 15 17" fill="none">
+            <rect x="1.2" y="7" width="12.6" height="9" rx="2.4" fill="currentColor"/>
+            <path d="M4.2 7V4.8a3.3 3.3 0 0 1 6.6 0V7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+          </svg></div>
+          <div class="plabel">Payment packet</div>
+        </div>
+        <div id="banner"><div class="bg"></div><div class="bs"></div></div>
+      </div>
+
+      <div id="bottom">
+        <div id="alert"></div>
+        <div id="status"></div>
+        <div id="caption"></div>
+        <div id="controls">
+          <button class="btn primary" id="bPay">Pay ₹250</button>
+          <button class="btn" id="bRelay">Add relay</button>
+          <button class="btn danger" id="bDisc">Disconnect bridge</button>
+          <button class="btn" id="bRecon">Reconnect bridge</button>
+          <button class="btn" id="bReplay">Replay</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <span>BouncePay · Offline payment mesh</span>
+    <span>Store → carry → forward</span>
+  </div>
+</footer>
+</main>
+
+<script>
+/* ============================================================
+   SITE — nav, reveals, about strip
+   ============================================================ */
+(() => {
+"use strict";
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ── nav: sticky state, active section, sliding pill ─────────────────── */
+const nav = $("#nav"), pill = $("#navpill"), links = $$("#navlinks a");
+const secs = links.map(a => $(a.getAttribute("href")));
+
+function movePill(a) {
+  if (!a) return;
+  pill.style.width = a.offsetWidth + "px";
+  pill.style.transform = `translateX(${a.offsetLeft}px)`;
+  pill.style.opacity = "1";
+}
+function setActive(id) {
+  let hit = null;
+  links.forEach(a => {
+    const on = a.dataset.s === id;
+    a.classList.toggle("on", on);
+    if (on) hit = a;
+  });
+  movePill(hit);
+}
+addEventListener("scroll", () => nav.classList.toggle("tight", scrollY > 40), { passive: true });
+
+const spy = new IntersectionObserver(es => {
+  es.forEach(e => { if (e.isIntersecting) setActive(e.target.id); });
+}, { rootMargin: "-45% 0px -50% 0px", threshold: 0 });
+secs.forEach(s => s && spy.observe(s));
+
+links.forEach(a => a.addEventListener("click", e => {
+  e.preventDefault();
+  const t = $(a.getAttribute("href"));
+  if (!t) return;
+  setActive(a.dataset.s);
+  t.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+  history.replaceState(null, "", a.getAttribute("href"));
+}));
+$(".brandmark").addEventListener("click", e => {
+  e.preventDefault();
+  scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
+});
+addEventListener("resize", () => movePill($("#navlinks a.on")));
+setActive("about");
+addEventListener("load", () => movePill($("#navlinks a.on")));
+
+/* ── scroll reveals ──────────────────────────────────────────────────── */
+const rev = new IntersectionObserver(es => {
+  es.forEach(e => {
+    if (!e.isIntersecting) return;
+    const sibs = [...e.target.parentElement.children].filter(n => n.classList.contains("rv"));
+    e.target.style.transitionDelay = Math.min(sibs.indexOf(e.target), 5) * 70 + "ms";
+    e.target.classList.add("in");
+    rev.unobserve(e.target);
+  });
+}, { rootMargin: "0px 0px -12% 0px", threshold: .08 });
+$$(".rv").forEach(n => rev.observe(n));
+
+/* ── about: the packet gliding across the flow strip ─────────────────── */
+const strip = $(".strip"), fpk = $(".fpk");
+let stok = 0, sPlaying = false;
+const ssleep = ms => new Promise((res, rej) => {
+  const t = stok; setTimeout(() => (t === stok ? res() : rej(0)), ms);
+});
+function stween(dur, fn, ease) {
+  const t = stok, t0 = performance.now();
+  return new Promise((res, rej) => {
+    (function s(now) {
+      if (t !== stok) return rej(0);
+      const p = Math.min(1, (now - t0) / dur);
+      fn(ease ? ease(p) : (p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2));
+      p < 1 ? requestAnimationFrame(s) : res();
+    })(t0);
+  });
+}
+function stripStops() {
+  const r = strip.getBoundingClientRect();
+  return $$(".fnode", strip).map(n => {
+    const b = n.getBoundingClientRect();
+    return b.left - r.left + b.width / 2 - fpk.offsetWidth / 2;
+  });
+}
+const putPk = (x, sx = 1, sy = sx, y = 0) => {
+  fpk.style.transform = `translate(${x}px,${y}px) scale(${sx},${sy})`;
+};
+
+async function runStrip() {
+  const t = ++stok;
+  try {
+    while (t === stok) {
+      if (!fpk.offsetParent) { await ssleep(1000); continue; }   // hidden on mobile
+      const p = stripStops();
+      const g = $(".fglyph", strip).getBoundingClientRect();
+      fpk.style.top = (g.top - strip.getBoundingClientRect().top + g.height / 2 - fpk.offsetHeight / 2) + "px";
+      fpk.classList.remove("ok");
+      fpk.style.opacity = "0";
+      putPk(p[0], .4);
+      await ssleep(420);
+      fpk.style.opacity = "1";
+      await stween(400, k => putPk(p[0], .4 + k * .6));
+      await ssleep(620);
+      for (let i = 0; i < p.length - 1; i++) {
+        if (i === p.length - 2) fpk.classList.add("ok");
+        await stween(740, k => putPk(              // arcs up and over the wire
+          p[i] + (p[i + 1] - p[i]) * k,
+          1 + Math.sin(Math.PI * k) * .16,
+          undefined,
+          -Math.sin(Math.PI * k) * 32
+        ), k => k);
+        await stween(190, k => putPk(p[i + 1], 1 + .28 * (1 - k), 1 - .24 * (1 - k)));
+        await ssleep(430);
+      }
+      await ssleep(1000);
+      fpk.style.opacity = "0";
+      await ssleep(700);
+    }
+  } catch (e) { /* superseded */ }
+}
+const stripView = new IntersectionObserver(es => {
+  es.forEach(e => {
+    if (e.isIntersecting && !sPlaying) { sPlaying = true; runStrip(); }
+    else if (!e.isIntersecting && sPlaying) { sPlaying = false; stok++; fpk.style.opacity = "0"; }
+  });
+}, { threshold: .3 });
+if (strip && fpk && !reduced) stripView.observe(strip);
+
+/* -- built with: click a technology to reveal what it does ------------ */
+$$(".layer").forEach(layer => {
+  const out = $(".ldesc", layer), slot = $("span", out);
+  $$(".chip", layer).forEach(chip => chip.addEventListener("click", () => {
+    const already = chip.classList.contains("open");
+    $$(".chip", layer).forEach(c => {
+      c.classList.remove("open"); c.setAttribute("aria-expanded", "false");
+    });
+    if (already) { out.classList.remove("on"); return; }
+    chip.classList.add("open"); chip.setAttribute("aria-expanded", "true");
+    slot.innerHTML = '<b>' + chip.dataset.n + '</b> — ' + chip.dataset.d;
+    out.classList.add("on");
+  }));
+});
+
+/* ── demo: start it the first time the section is seen ───────────────── */
+const demo = $("#demo");
+let started = false;
+const demoView = new IntersectionObserver(es => {
+  es.forEach(e => {
+    if (!e.isIntersecting || !window.BounceDemo) return;
+    window.BounceDemo.resize();
+    if (!started) { started = true; setTimeout(() => window.BounceDemo.start(), 550); }
+  });
+}, { threshold: .3 });
+if (demo) demoView.observe(demo);
+
+})();
+
+/* ============================================================
+   DEMO ENGINE
+   ============================================================ */
+(() => {
+"use strict";
+
+/* ── helpers ─────────────────────────────────────────────────────────── */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const ABORT = Symbol("abort");
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp  = (a, b, t) => a + (b - a) * t;
+const rnd   = (a, b) => a + Math.random() * (b - a);
+const easeInOut = t => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const easeOut   = t => 1 - Math.pow(1 - t, 3);
+const LINEAR    = t => t;
+
+const S = {
+  scene: null, relays: 1, bridge: true, running: false,
+  token: 0, wait: null, seenCrowd: false, intro: false, started: false,
+  route: [], uplink: null, stranded: []
+};
+const MAX_CHAIN = 5;                 // buyer + relays + bridge
+
+const el = {
+  stage: $("#stage"), nodes: $("#nodes"), cv: $("#net"),
+  packet: $("#packet"), verify: $("#verify"), banner: $("#banner"),
+  status: $("#status"), caption: $("#caption"), flow: $("#flow"),
+  bPay: $("#bPay"), bRelay: $("#bRelay"),
+  bReplay: $("#bReplay"), bDisc: $("#bDisc"), bRecon: $("#bRecon"), alert: $("#alert")
+};
+const ctx = el.cv.getContext("2d");
+
+let W = 0, H = 0, DPR = 1, SC = 1;
+let NODES = {}, ORDER = [], LINKS = [];
+const dust = [], trail = [], rings = [];
+
+/* ── time control (abortable) ────────────────────────────────────────── */
+function sleep(ms) {
+  const tok = S.token;
+  return new Promise((res, rej) =>
+    setTimeout(() => (tok === S.token ? res() : rej(ABORT)), ms));
+}
+function tween(dur, fn, ease = easeInOut) {
+  const tok = S.token, t0 = performance.now();
+  return new Promise((res, rej) => {
+    (function step(now) {
+      if (tok !== S.token) return rej(ABORT);
+      const p = clamp((now - t0) / dur, 0, 1);
+      fn(ease(p), p);
+      p < 1 ? requestAnimationFrame(step) : res();
+    })(t0);
+  });
+}
+function abortRun() {
+  S.token++;
+  if (S.wait) { const w = S.wait; S.wait = null; w.rej(ABORT); }
+  S.running = false;
+}
+
+/* ── node factory ────────────────────────────────────────────────────── */
+function mk(cls, html) {
+  const d = document.createElement("div");
+  d.className = "node " + cls;
+  d.innerHTML = html;
+  el.nodes.appendChild(d);
+  return d;
+}
+const SIG = '<span class="sig"><i></i><i></i><i></i><i></i></span>';
+
+function addPhone(id, o) {
+  const d = mk("phone " + (o.online ? "online" : "offline"), `
+    <div class="body"><div class="glass">
+      <div class="island"></div>
+      <div class="sbar">${SIG}<span>9:41</span></div>
+      <div class="scr"></div>
+    </div></div>
+    <div class="cap">
+      <span class="cap-name">${o.name}</span>
+      <span class="cap-net"><span class="pip"></span><span class="nettxt">${o.online ? "5G · WI-FI" : "NO INTERNET"}</span></span>
+    </div>
+    <div class="float"></div>`);
+  return reg(id, { type: "phone", el: d, ...o });
+}
+function addMini(id, o) {
+  const d = mk("phone mini " + (o.online ? "online" : "offline"), `
+    <div class="body"><div class="glass"><span class="pulse"></span></div></div>
+    ${o.name ? `<div class="cap"><span class="cap-name">${o.name}</span>${
+        o.online ? '<span class="cap-net"><span class="pip"></span><span class="nettxt">5G</span></span>' : ""
+      }</div>` : ""}
+    <div class="float"></div>`);
+  return reg(id, { type: "mini", el: d, ...o });
+}
+function addShop(id, o) {
+  const d = mk("shop", `
+    <div class="card">
+      <div class="awn"></div>
+      <div class="inner">
+        <div class="nm">${o.name}</div>
+        <div class="sub">${o.sub}</div>
+        <div class="term"><span class="tl">Terminal</span><span class="tv">Waiting…</span></div>
+        <div class="noint"><span class="pip"></span>No internet</div>
+      </div>
+    </div>
+    <div class="float"></div>`);
+  return reg(id, { type: "shop", el: d, ...o });
+}
+function addGateway(id, o) {
+  const d = mk("gw", `
+    <div class="card">
+      <div class="ring"></div>
+      <svg class="cloud" width="42" height="24" viewBox="0 0 42 24" fill="none">
+        <path d="M11 21h20a7 7 0 0 0 1-13.9A9 9 0 0 0 14.4 6 6.5 6.5 0 0 0 11 21Z"
+              stroke="currentColor" stroke-width="1.3" fill="rgba(47,240,200,.07)"/>
+      </svg>
+      <div class="nm">BouncePay Gateway</div>
+      <div class="sub">Settlement · cloud</div>
+    </div>
+    <div class="float"></div>`);
+  return reg(id, { type: "gw", el: d, ...o });
+}
+function addProp(id, o) {
+  const d = mk("prop " + (o.cls || ""), `
+    <div class="card"><div class="nm">${o.name}</div>
+    ${o.sub ? `<div class="sub">${o.pip !== false ? '<span class="pip"></span>' : ""}${o.sub}</div>` : ""}</div>
+    <div class="float"></div>`);
+  return reg(id, { type: "prop", el: d, ...o });
+}
+function reg(id, n) { n.id = id; NODES[id] = n; ORDER.push(id); return n; }
+
+const FT = 78;                        // reserved for the flow rail
+let PADB = 155;                       // reserved for node captions
+const fy = f => FT + f * Math.max(170, H - FT - PADB);
+const pos = id => { const n = NODES[id]; return { x: n.x * W, y: fy(n.y) }; };
+function link(a, b, type, o = {}) {
+  const L = { a, b, type, e: 0, off: 0, ...o };
+  if (L.label) {
+    const d = document.createElement("div");
+    d.className = "llab" + (type === "net" ? " net" : "");
+    d.textContent = L.label;
+    el.nodes.appendChild(d);
+    L.el = d;
+  }
+  LINKS.push(L);
+}
+const findLink = (a, b) => LINKS.find(l => (l.a === a && l.b === b) || (l.a === b && l.b === a));
+
+/* ── layout ──────────────────────────────────────────────────────────── */
+function qbez(p0, p1, p2, t) {
+  const u = 1 - t;
+  return { x: u * u * p0.x + 2 * u * t * p1.x + t * t * p2.x,
+           y: u * u * p0.y + 2 * u * t * p1.y + t * t * p2.y };
+}
+function chainIds() {
+  const c = ["buyer"];
+  for (let i = 0; i < S.relays; i++) c.push("r" + i);
+  c.push("bridge");
+  return c;
+}
+function layout() {
+  if (S.scene === "campus") {
+    const c = chainIds(), n = c.length;
+    const P0 = { x: .285, y: 1 }, C = { x: .445, y: .40 }, P2 = { x: .725, y: .40 };
+    c.forEach((id, i) => {
+      const t = n === 1 ? 0 : i / (n - 1);
+      const p = qbez(P0, C, P2, t);
+      Object.assign(NODES[id], p);
+    });
+  }
+  ORDER.forEach(id => {
+    const n = NODES[id];
+    n.el.style.left = (n.x * W) + "px";
+    n.el.style.top  = fy(n.y) + "px";
+  });
+  LINKS.forEach(l => {
+    if (!l.el || !NODES[l.a] || !NODES[l.b]) return;
+    const a = pos(l.a), b = pos(l.b);
+    l.el.style.left = ((a.x + b.x) / 2) + "px";
+    l.el.style.top  = ((a.y + b.y) / 2) + "px";
+  });
+  if (NODES.gateway) {
+    const g = pos("gateway");
+    // keep the verify card clear of the flow rail above and the node below it
+    const vh = el.verify.offsetHeight * SC;
+    const anchor = NODES.bridge || (S.uplink && NODES[S.uplink]);
+    const ceil = anchor ? fy(anchor.y) - (anchor.type === "mini" ? 30 : 88) * SC - vh / 2 - 14 : H;
+    const cy = Math.max(56 + vh / 2, Math.min(g.y - vh * .18, ceil));
+    el.verify.style.left = (g.x - (84 * SC + 26)) + "px";
+    el.verify.style.top  = cy + "px";
+  }
+}
+function resize() {
+  W = el.stage.clientWidth; H = el.stage.clientHeight;
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  el.cv.width = W * DPR; el.cv.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  SC = clamp(Math.min(W / 1240, H / 640), .58, 1.08);
+  document.documentElement.style.setProperty("--s", SC);
+  layout();
+}
+window.addEventListener("resize", resize);
+
+/* ── canvas render ───────────────────────────────────────────────────── */
+function floor() {
+  const hz = H * .30, vx = W * .5, vy = hz - H * .18;
+  ctx.save(); ctx.lineWidth = 1;
+  for (let i = -12; i <= 12; i++) {
+    ctx.strokeStyle = rgba(COL.grid, .05 * (1 - Math.abs(i) / 15));
+    ctx.beginPath(); ctx.moveTo(vx, vy); ctx.lineTo(W * .5 + i * (W / 8), H + 60); ctx.stroke();
+  }
+  for (let i = 1; i <= 13; i++) {
+    const t = i / 13, y = hz + (H - hz) * Math.pow(t, 2.3);
+    ctx.strokeStyle = rgba(COL.grid, .018 + .05 * t);
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  ctx.restore();
+}
+/* The canvas reads the same MD3 tokens as the stylesheet, so one theme
+   switch repaints the CSS and the WebGL-free canvas together. */
+const COL = { bt: [], net: [], ok: [], dead: [], gold: [], weak: [], grid: [] };
+function syncPalette() {
+  const cs = getComputedStyle(document.documentElement);
+  const read = (name, fallback) => {
+    const v = cs.getPropertyValue(name).trim().split(/[\s,]+/).map(Number);
+    return v.length === 3 && v.every(n => !isNaN(n)) ? v : fallback;
+  };
+  COL.bt   = read("--rgb-bt",   [187, 195, 255]);
+  COL.net  = read("--rgb-net",  [79, 219, 199]);
+  COL.ok   = read("--rgb-ok",   [126, 219, 143]);
+  COL.dead = read("--rgb-bad",  [242, 184, 181]);
+  COL.gold = read("--rgb-gold", [245, 197, 66]);
+  COL.weak = read("--rgb-weak", [147, 143, 153]);
+  COL.grid = read("--rgb-grid", [208, 188, 255]);
+}
+syncPalette();
+function rgba(c, a) { return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
+
+const RAD = { phone: 52, mini: 21, shop: 96, gw: 86, prop: 78 };
+function trim(a, b, ra, rb) {
+  const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1;
+  const k = Math.min(1, (d - 10) / (ra + rb));   // never invert a short strand
+  const ux = dx / d, uy = dy / d;
+  return [{ x: a.x + ux * ra * k, y: a.y + uy * ra * k },
+          { x: b.x - ux * rb * k, y: b.y - uy * rb * k }];
+}
+function drawLinks(dt) {
+  LINKS.forEach(l => {
+    if (!NODES[l.a] || !NODES[l.b]) return;
+    const [a, b] = trim(pos(l.a), pos(l.b),
+      (RAD[NODES[l.a].type] || 50) * SC, (RAD[NODES[l.b].type] || 50) * SC);
+    const dead = l.type === "net" && !S.bridge && l.a === "bridge";
+    const base = dead ? COL.dead : (l.type === "net" ? COL.net : (l.type === "weak" ? COL.weak : COL.bt));
+    const e = l.e;
+    l.off -= dt * .022 * (1 + e * 6);
+
+    ctx.save();
+    ctx.lineCap = "round";
+    // base strand
+    ctx.setLineDash(l.type === "net" && !dead ? [] : [3, 7]);
+    ctx.lineDashOffset = l.off;
+    ctx.lineWidth = l.type === "net" ? 1.8 : 1.5;
+    ctx.strokeStyle = rgba(base, (l.type === "weak" ? .30 : .46) + e * .45);
+    ctx.shadowBlur = l.type === "weak" ? 4 : 7;
+    ctx.shadowColor = rgba(base, .40);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+
+    // energised overlay
+    if (e > .01) {
+      ctx.setLineDash([]);
+      ctx.globalCompositeOperation = "lighter";
+      ctx.shadowBlur = 22 * e; ctx.shadowColor = rgba(base, .9);
+      ctx.lineWidth = 1.5 + e * 2.2;
+      ctx.strokeStyle = rgba(base, .30 * e);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+    ctx.restore();
+
+    // uplink beads on live internet link
+    if (l.type === "net" && !dead && e > .05) {
+      const beads = 4;
+      for (let i = 0; i < beads; i++) {
+        const t = ((performance.now() / 900 + i / beads) % 1);
+        const x = lerp(a.x, b.x, t), y = lerp(a.y, b.y, t);
+        ctx.save(); ctx.globalCompositeOperation = "lighter";
+        ctx.fillStyle = rgba(base, .55 * e * Math.sin(Math.PI * t));
+        ctx.beginPath(); ctx.arc(x, y, 2.1, 0, 7); ctx.fill(); ctx.restore();
+      }
+    }
+    if (l.el) {
+      const hot = l.e > .25;
+      if (l._hot !== hot) { l._hot = hot; l.el.classList.toggle("hot", hot); }
+      if (l.type === "net" && l._dead !== dead) {
+        l._dead = dead;
+        l.el.classList.toggle("dead", dead);
+        l.el.textContent = dead ? "No internet" : "Internet";
+      }
+    }
+    l.e = Math.max(0, l.e - dt * .0011);
+  });
+}
+function drawRings(dt) {
+  for (let i = rings.length - 1; i >= 0; i--) {
+    const r = rings[i];
+    r.t += dt / r.life;
+    if (r.t >= 1) { rings.splice(i, 1); continue; }
+    const p = easeOut(r.t);
+    ctx.save(); ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = rgba(r.c, (1 - r.t) * .5);
+    ctx.lineWidth = 1.4 * (1 - r.t * .5);
+    ctx.beginPath(); ctx.arc(r.x, r.y, 8 + p * r.r, 0, 7); ctx.stroke();
+    ctx.restore();
+  }
+}
+function drawTrail(dt) {
+  for (let i = trail.length - 1; i >= 0; i--) {
+    const p = trail[i];
+    p.life -= dt / 620; p.x += p.vx * dt * .04; p.y += p.vy * dt * .04;
+    if (p.life <= 0) { trail.splice(i, 1); continue; }
+    ctx.save(); ctx.globalCompositeOperation = "lighter";
+    ctx.fillStyle = rgba(p.c, p.life * .6);
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r * p.life, 0, 7); ctx.fill(); ctx.restore();
+  }
+}
+function drawDust(dt) {
+  ctx.save(); ctx.globalCompositeOperation = "lighter";
+  dust.forEach(d => {
+    d.y -= d.v * dt * .012; d.x += Math.sin((performance.now() + d.o) / 3200) * .09;
+    if (d.y < -10) { d.y = H + 10; d.x = Math.random() * W; }
+    ctx.fillStyle = rgba(COL.grid, d.a);
+    ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 7); ctx.fill();
+  });
+  ctx.restore();
+}
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(48, now - last); last = now;
+  ctx.clearRect(0, 0, W, H);
+  floor(); drawDust(dt); drawLinks(dt); drawRings(dt); drawTrail(dt);
+  requestAnimationFrame(frame);
+}
+function seedDust() {
+  dust.length = 0;
+  for (let i = 0; i < 70; i++)
+    dust.push({ x: Math.random() * 1600, y: Math.random() * 900, r: rnd(.5, 1.5),
+                a: rnd(.05, .22), v: rnd(.3, 1.1), o: Math.random() * 9000 });
+}
+
+/* ── visual primitives ───────────────────────────────────────────────── */
+function ring(id, c = COL.bt, r = 70, life = 900) {
+  const p = pos(id); rings.push({ x: p.x, y: p.y, c, r, life, t: 0 });
+}
+function pulse(id, glow) {
+  const n = NODES[id]; if (!n) return;
+  n.el.style.setProperty("--glow", glow || rgba(COL.bt, .85));
+  n.el.classList.add("act");
+  clearTimeout(n._t);
+  n._t = setTimeout(() => n.el.classList.remove("act"), 1400);
+}
+function hold(id, on, glow) {
+  const n = NODES[id]; if (!n) return;
+  n.el.style.setProperty("--glow", glow || rgba(COL.bt, .85));
+  clearTimeout(n._t);
+  n.el.classList.toggle("act", !!on);
+}
+function float(id, text, tone = "", ms = 1800) {
+  const n = NODES[id]; if (!n) return;
+  const f = n.el.querySelector(".float"); if (!f) return;
+  f.className = "float on " + tone; f.textContent = text;
+  clearTimeout(n._f);
+  if (ms) n._f = setTimeout(() => f.classList.remove("on"), ms);
+}
+function clearFloats() {
+  $$(".float").forEach(f => f.classList.remove("on"));
+}
+function screen(id, o) {
+  const n = NODES[id]; if (!n || n.type !== "phone" || n.mini) return;
+  const s = n.el.querySelector(".scr"); if (!s) return;
+  s.innerHTML = [
+    o.label ? `<div class="s-label">${o.label}</div>` : "",
+    o.big   ? `<div class="s-big ${o.bigCls || ""}">${o.big}</div>` : "",
+    o.dots  ? `<div class="s-dots"><i></i><i></i><i></i></div>` : "",
+    o.btn   ? `<div class="s-btn">${o.btn}</div>` : "",
+    o.chip  ? `<div class="s-chip ${o.chipCls || ""}">${o.chip}</div>` : ""
+  ].join("");
+}
+function setOnline(id, on) {
+  const n = NODES[id]; if (!n) return;
+  n.online = on;
+  n.el.classList.toggle("online", on);
+  n.el.classList.toggle("offline", !on);
+  const t = n.el.querySelector(".nettxt");
+  if (t) t.textContent = on ? "5G · WI-FI" : "NO INTERNET";
+}
+function setStatus(t) { el.status.innerHTML = t; }
+function banner(big, sub = "", tone = "") {
+  el.banner.className = "on " + tone;
+  $(".bg", el.banner).textContent = big;
+  $(".bs", el.banner).textContent = sub;
+  // restart entry animation
+  $$("#banner .bg, #banner .bs").forEach(n => { n.style.animation = "none"; void n.offsetWidth; n.style.animation = ""; });
+}
+const hideBanner = () => el.banner.classList.remove("on");
+function alertOn(main, sub) {
+  el.alert.innerHTML = `<span class="pip"></span><span>${main}</span>` +
+                       (sub ? `<span class="sub">${sub}</span>` : "");
+  el.alert.classList.add("on");
+  el.alert.style.animation = "none"; void el.alert.offsetWidth; el.alert.style.animation = "";
+}
+const alertOff = () => el.alert.classList.remove("on");
+
+/* ── packet ──────────────────────────────────────────────────────────── */
+let pkScale = 1;
+function packetAt(x, y, sx = 1, sy = sx) {
+  pkScale = sx;
+  el.packet.style.transform =
+    `translate(${x}px,${y}px) translate(-50%,-50%) scale(${SC * sx},${SC * sy})`;
+}
+function showPacket(id, mode = "") {
+  const p = pos(id);
+  el.packet.className = "on " + mode;
+  $(".plabel", el.packet).textContent = mode === "ok" ? "Settlement receipt" : "Payment packet";
+  packetAt(p.x, p.y, .2);
+  requestAnimationFrame(() => tween(420, t => packetAt(p.x, p.y, lerp(.2, 1, t))).catch(() => {}));
+}
+const hidePacket = () => { el.packet.className = ""; };
+
+function emit(x, y, c) {
+  for (let i = 0; i < 2; i++)
+    trail.push({ x: x + rnd(-3, 3), y: y + rnd(-3, 3), vx: rnd(-.3, .3), vy: rnd(-.3, .3),
+                 r: rnd(1.6, 4.2), life: 1, c });
+}
+
+async function hop(from, to, o = {}) {
+  const a = pos(from), b = pos(to);
+  const kind = o.kind || "bt";
+  const col  = o.col || (kind === "net" ? COL.net : (o.ok ? COL.ok : [255, 190, 90]));
+  const dur  = o.dur || 1050;
+  const lk   = findLink(from, to);
+  const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
+  const nx = -dy / len, ny = dx / len;
+  const lift = (kind === "net" ? 0 : (o.lift ?? .24)) * len * (a.y > b.y ? 1 : -1);
+
+  ring(from, kind === "net" ? COL.net : COL.bt, 90, 900);
+  pulse(from, rgba(col, .8));
+  if (lk) lk.e = 1;
+
+  await tween(dur, t => {
+    const arc = Math.sin(Math.PI * t) * lift;
+    const x = a.x + dx * t + nx * arc, y = a.y + dy * t + ny * arc;
+    packetAt(x, y, 1 + Math.sin(Math.PI * t) * .16);
+    emit(x, y, col);
+    if (lk) lk.e = Math.max(lk.e, .55 + .45 * Math.sin(Math.PI * t));
+  }, o.ease || (kind === "net" ? easeInOut : LINEAR));   // ballistic: flat horizontal speed
+
+  pulse(to, rgba(col, .85));
+  ring(to, kind === "net" ? COL.net : COL.bt, 60, 700);
+
+  // it lands like a ball: squash on impact, then recover
+  if (kind !== "net") {
+    const sq = Math.min(200, dur * .22);
+    await tween(sq, t => packetAt(b.x, b.y, 1 + .30 * (1 - t), 1 - .26 * (1 - t)), easeOut);
+    packetAt(b.x, b.y, 1, 1);
+  }
+}
+
+/* ── flow rail ───────────────────────────────────────────────────────── */
+function buildFlow() {
+  const hops = chainIds().length - 1;
+  const steps = ["Offline pay"];
+  for (let i = 0; i < hops; i++) steps.push("BT hop " + (i + 1));
+  steps.push("Internet"); steps.push("Settled");
+  el.flow.innerHTML = steps.map((s, i) =>
+    `${i ? '<span class="fsep"></span>' : ""}<span class="fstep${i === steps.length - 1 ? " fin" : ""}" data-i="${i}"><span class="fd"></span>${s}</span>`
+  ).join("");
+}
+function flowStep(i) {
+  $$(".fstep", el.flow).forEach(s => {
+    const k = +s.dataset.i;
+    s.classList.toggle("done", k < i);
+    s.classList.toggle("live", k === i);
+  });
+}
+const flowReset = () => $$(".fstep", el.flow).forEach(s => s.classList.remove("done", "live"));
+
+/* ── scenes ──────────────────────────────────────────────────────────── */
+function clearScene() {
+  abortRun();
+  el.nodes.innerHTML = "";
+  NODES = {}; ORDER = []; LINKS.length = 0;
+  trail.length = 0; rings.length = 0;
+  hidePacket(); hideBanner(); alertOff(); el.verify.classList.remove("on");
+  el.caption.classList.remove("on");
+  flowReset();
+}
+
+/* ---------- scene 1 : campus ---------- */
+function buildCampus() {
+  clearScene();
+  S.scene = "campus"; PADB = 155;
+  addShop("shop", { name: "Campus Shop", sub: "Stall 12 · Gate B", x: .115, y: .60 });
+  addPhone("buyer", { name: "Buyer", online: false });
+  for (let i = 0; i < S.relays; i++) addPhone("r" + i, { name: "Relay " + (i + 1), online: false });
+  addPhone("bridge", { name: "Bridge", online: S.bridge });
+  addGateway("gateway", { x: .875, y: 0 });
+
+  const c = chainIds();
+  link("shop", "buyer", "weak", { tap: true });
+  for (let i = 0; i < c.length - 1; i++) link(c[i], c[i + 1], "bt", { label: "Bluetooth" });
+  link("bridge", "gateway", "net", { label: "Internet" });
+
+  layout();
+  idleCampus();
+  buildFlow();
+  el.nodes.querySelectorAll(".node").forEach((n, i) => {
+    n.classList.add("spawn"); n.style.animationDelay = (i * 70) + "ms";
+    setTimeout(() => { n.classList.remove("spawn"); n.style.animationDelay = ""; }, 900 + i * 70);
+  });
+}
+function idleCampus() {
+  screen("buyer", { label: "Campus Shop", big: "₹250", bigCls: "rup", btn: "Pay" });
+  chainIds().slice(1, -1).forEach(id => screen(id, { label: "BouncePay", big: "Idle", bigCls: "small", chip: "Relay ready" }));
+  screen("bridge", S.bridge
+    ? { label: "BouncePay", big: "Online", bigCls: "small", chip: "Bridge ready", chipCls: "ok" }
+    : { label: "BouncePay", big: "Offline", bigCls: "small", chip: "No internet", chipCls: "bad" });
+  const sh = NODES.shop;
+  sh.el.classList.remove("paid");
+  $(".tl", sh.el).textContent = "Terminal";
+  $(".tv", sh.el).textContent = "Waiting…";
+  clearFloats();
+}
+
+/* ---------- scene 2 : crowd ---------- */
+const CROWD = [
+  ["c1", .335, .70], ["c2", .295, .565], ["c3", .415, .795], ["c4", .455, .625],
+  ["c5", .375, .465], ["c6", .525, .735], ["c7", .560, .535], ["c8", .495, .385],
+  ["c9", .625, .675], ["c10", .650, .455], ["c11", .705, .755], ["c12", .720, .570],
+  ["c13", .790, .680], ["c14", .820, .440], ["c15", .680, .335], ["c16", .290, .220]
+];
+const CROWD_ONLINE = ["c14", "c16"];
+
+// Breadth-first over the bluetooth proximity graph: the packet always ends up
+// at the nearest phone that actually has internet AND is reachable by hops.
+function shortestRoute(start) {
+  const adj = {};
+  LINKS.forEach(l => {
+    if (l.type === "net") return;
+    (adj[l.a] = adj[l.a] || []).push(l.b);
+    (adj[l.b] = adj[l.b] || []).push(l.a);
+  });
+  const prev = { [start]: null }, q = [start];
+  let hit = null;
+  while (q.length) {
+    const n = q.shift();
+    if (n !== start && NODES[n] && NODES[n].online) { hit = n; break; }
+    (adj[n] || []).sort((m1, m2) => {
+      const d = id => Math.hypot((NODES[n].x - NODES[id].x) * 1.6, NODES[n].y - NODES[id].y);
+      return d(m1) - d(m2);
+    }).forEach(m => { if (!(m in prev)) { prev[m] = n; q.push(m); } });
+  }
+  if (!hit) return [start];
+  const p = [];
+  for (let x = hit; x; x = prev[x]) p.push(x);
+  return p.reverse();
+}
+
+function buildCrowd() {
+  clearScene();
+  S.scene = "crowd"; PADB = 130;
+  addProp("tower", { name: "Cell tower", sub: "Network congested", x: .105, y: .155 });
+  addProp("stagebar", { name: "Main stage", sub: "18,400 people", pip: false, x: .43, y: .105, cls: "stagebar" });
+  addShop("stall", { name: "Food Stall", sub: "Gate C · Row 4", x: .105, y: .60 });
+  addPhone("cbuyer", { name: "Buyer", online: false, x: .225, y: .82 });
+  CROWD.forEach(([id, x, y]) => addMini(id, {
+    x, y, online: CROWD_ONLINE.includes(id),
+    name: CROWD_ONLINE.includes(id) ? "Has internet" : ""
+  }));
+  addGateway("gateway", { x: .885, y: .215 });
+
+  // ambient proximity mesh
+  const all = ["cbuyer", ...CROWD.map(c => c[0])];
+  for (let i = 0; i < all.length; i++)
+    for (let j = i + 1; j < all.length; j++) {
+      const A = NODES[all[i]], B = NODES[all[j]];
+      const d = Math.hypot((A.x - B.x) * 1.6, A.y - B.y);
+      if (d < .235) link(all[i], all[j], "weak");
+    }
+  S.route = shortestRoute("cbuyer");
+  S.uplink = S.route[S.route.length - 1];
+  for (let i = 0; i < S.route.length - 1; i++) {
+    const l = findLink(S.route[i], S.route[i + 1]);
+    if (l) l.type = "bt";
+  }
+  // online phones that no one nearby can reach over bluetooth
+  S.stranded = CROWD.map(c => c[0]).filter(id =>
+    NODES[id].online && id !== S.uplink && !LINKS.some(l => l.a === id || l.b === id));
+  link("stall", "cbuyer", "weak");
+  link(S.uplink, "gateway", "net", { label: "Internet" });
+
+  layout();
+  idleCrowd();
+  el.caption.innerHTML = "Connectivity becomes a property of the <b>network around you</b> — not just your own phone.";
+  el.caption.classList.add("on");
+  el.nodes.querySelectorAll(".node").forEach((n, i) => {
+    n.classList.add("spawn"); n.style.animationDelay = (i * 38) + "ms";
+    setTimeout(() => { n.classList.remove("spawn"); n.style.animationDelay = ""; }, 900 + i * 38);
+  });
+}
+function idleCrowd() {
+  screen("cbuyer", { label: "Food Stall", big: "₹250", bigCls: "rup", btn: "Pay" });
+  const st = NODES.stall;
+  st.el.classList.remove("paid");
+  $(".tl", st.el).textContent = "Terminal";
+  $(".tv", st.el).textContent = "Waiting…";
+  clearFloats();
+}
+
+/* ── verification ────────────────────────────────────────────────────── */
+async function verify() {
+  const rows = $$(".vr", el.verify);
+  rows.forEach(r => r.classList.remove("on"));
+  el.verify.classList.add("on");
+  hold("gateway", true, rgba(COL.net, .9));
+  setStatus('BOUNCEPAY GATEWAY · <span class="hl">VERIFYING PACKET</span>');
+  for (const r of rows) { await sleep(430); r.classList.add("on"); ring("gateway", COL.net, 120, 900); }
+  await sleep(560);
+  el.verify.classList.remove("on");
+}
+
+/* ── main payment sequence (campus) ──────────────────────────────────── */
+async function pay() {
+  if (S.running) return;
+  S.running = true; const tok = ++S.token; sync();
+  try {
+    idleCampus(); hideBanner(); alertOff(); flowReset(); hidePacket();
+    const c = chainIds();
+
+    /* 1 · tap + authorise */
+    flowStep(0);
+    setStatus("BUYER TAPS TO PAY · SHOP IS OFFLINE");
+    float("shop", "No internet", "bad", 2600);
+    const l0 = findLink("shop", "buyer"); if (l0) l0.e = 1;
+    await sleep(650);
+    const btn = $(".s-btn", NODES.buyer.el);
+    if (btn) { btn.classList.add("press"); ring("buyer", COL.ok, 70, 700); }
+    await sleep(260);
+    screen("buyer", { label: "Signing offline", big: "₹250", bigCls: "rup", dots: true });
+    pulse("buyer", rgba(COL.gold, .9));
+    await sleep(820);
+
+    /* 2 · packet is born */
+    screen("buyer", { label: "Packet ready", big: "₹250", bigCls: "rup", chip: "Encrypted", chipCls: "hot" });
+    showPacket("buyer");
+    ring("buyer", COL.bt, 110, 1000);
+    setStatus('ENCRYPTED <span class="hl">PAYMENT PACKET</span> CREATED · NO INTERNET NEEDED');
+    await sleep(1100);
+
+    /* 3 · bluetooth hops */
+    for (let i = 0; i < c.length - 1; i++) {
+      const from = c[i], to = c[i + 1], lastHop = i === c.length - 2;
+
+      if (lastHop && !S.bridge) {
+        el.packet.classList.add("held");
+        screen(from, { label: "Holding", big: "₹250", bigCls: "rup small", chip: "Store & forward", chipCls: "hot" });
+        float(from, "Packet stored · waiting", "gold", 0);
+        setStatus("PACKET WAITS ON THE RELAY UNTIL A BRIDGE APPEARS");
+        alertOn("No internet bridge found", "— packet held encrypted · press reconnect bridge");
+        hold(from, true, rgba(COL.gold, .9));
+        sync();
+        await waitBridge();
+        alertOff();
+        el.packet.classList.remove("held");
+        hold(from, false);
+        float(from, "Bridge in range", "bt", 1600);
+        banner("Bridge online", "Resuming store → carry → forward", "net");
+        await sleep(900);
+        hideBanner();
+      }
+
+      flowStep(i + 1);
+      setStatus(`BLUETOOTH HOP ${i + 1} · ${NODES[from].name.toUpperCase()} → ${NODES[to].name.toUpperCase()}`);
+      float(from, "Sending", "bt", 1200);
+      await hop(from, to);
+
+      if (to === "bridge") {
+        screen("bridge", { label: "BouncePay", big: "Bridge", bigCls: "small", chip: "Bridge found", chipCls: "ok" });
+        float("bridge", "Internet found", "ok", 2200);
+        banner("Bridge found", "Switching bluetooth → internet", "net");
+        ring("bridge", COL.net, 150, 1100);
+        await sleep(1150);
+        hideBanner();
+      } else {
+        screen(to, { label: "Carrying", big: "₹250", bigCls: "rup small", chip: "Packet stored", chipCls: "hot" });
+        float(to, "Packet stored", "gold", 1600);
+        await sleep(620);
+      }
+      screen(from, { label: "BouncePay", big: from === "buyer" ? "Sent" : "Forwarded", bigCls: "small", chip: from === "buyer" ? "Awaiting settlement" : "Relayed", chipCls: "" });
+    }
+
+    /* 4 · uplink to gateway */
+    flowStep(c.length);
+    setStatus('INTERNET UPLINK · <span class="hl">BRIDGE → BOUNCEPAY GATEWAY</span>');
+    const nl = findLink("bridge", "gateway"); if (nl) nl.e = 1;
+    screen("bridge", { label: "Uplinking", big: "5G", bigCls: "small", dots: true });
+    await hop("bridge", "gateway", { kind: "net", dur: 1250, ease: t => Math.pow(t, 1.6) });
+    hidePacket();
+    ring("gateway", COL.net, 190, 1200);
+
+    /* 5 · verify + settle */
+    await verify();
+    flowStep(c.length + 1);
+    banner("Payment settled", "₹250 · offline buyer · offline merchant", "ok");
+    ring("gateway", COL.ok, 320, 1500);
+    hold("gateway", false);
+    await sleep(1500);
+    hideBanner();
+
+    /* 6 · receipt travels home */
+    setStatus("SETTLEMENT RECEIPT RETURNING THROUGH THE MESH");
+    showPacket("gateway", "ok");
+    await hop("gateway", "bridge", { kind: "net", dur: 620, col: COL.ok, ok: true });
+    for (let i = c.length - 1; i > 0; i--) {
+      screen(c[i], { label: "BouncePay", big: "Done", bigCls: "small", chip: "Receipt relayed", chipCls: "ok" });
+      await hop(c[i], c[i - 1], { dur: 400, col: COL.ok, ok: true, lift: .10 });
+    }
+    await hop("buyer", "shop", { dur: 430, col: COL.ok, ok: true, lift: .10 });
+    hidePacket();
+    ring("shop", COL.ok, 200, 1200);
+
+    screen("buyer", { label: "BouncePay", big: "✓", bigCls: "", chip: "Payment complete", chipCls: "ok" });
+    const sh = NODES.shop;
+    sh.el.classList.add("paid"); pulse("shop", rgba(COL.ok, .9));
+    $(".tl", sh.el).textContent = "Settled";
+    $(".tv", sh.el).textContent = "₹250";
+    float("shop", "Settled · ₹250", "ok", 4200);
+    setStatus('<span class="hl">SETTLED</span> · NEITHER THE BUYER NOR THE SHOP HAD INTERNET');
+
+  } catch (e) { if (e !== ABORT) console.error(e); }
+  finally { if (tok === S.token) { S.running = false; sync(); } }
+}
+
+function waitBridge() {
+  const tok = S.token;
+  return new Promise((res, rej) => { S.wait = { res, rej, tok }; });
+}
+
+/* ── crowd sequence ──────────────────────────────────────────────────── */
+async function payCrowd() {
+  if (S.running) return;
+  S.running = true; const tok = ++S.token; sync();
+  try {
+    idleCrowd(); hideBanner(); alertOff(); hidePacket();
+    const r = S.route;
+
+    setStatus("CELLULAR NETWORK CONGESTED · NOBODY NEARBY CAN REACH THE BANK");
+    float("tower", "Congested", "bad", 2600);
+    for (const [id] of CROWD) if (!NODES[id].online) { ring(id, COL.dead, 26, 700); }
+    (S.stranded || []).forEach(id => { float(id, "Out of bluetooth range", "bad", 4200); ring(id, COL.dead, 60, 1000); });
+    await sleep(1600);
+
+    setStatus("BUYER PAYS ₹250 AT THE FOOD STALL");
+    const btn = $(".s-btn", NODES.cbuyer.el);
+    if (btn) btn.classList.add("press");
+    ring("cbuyer", COL.ok, 70, 700);
+    await sleep(420);
+    screen("cbuyer", { label: "Packet ready", big: "₹250", bigCls: "rup", chip: "Encrypted", chipCls: "hot" });
+    showPacket("cbuyer");
+    await sleep(900);
+
+    for (let i = 0; i < r.length - 1; i++) {
+      const from = r[i], to = r[i + 1];
+      setStatus(`SEEKING A PATH · BLUETOOTH HOP ${i + 1} OF ${r.length - 1}`);
+      // ping neighbours
+      LINKS.filter(l => l.a === from || l.b === from).forEach(l => { l.e = Math.max(l.e, .55); });
+      ring(from, COL.bt, 130, 1000);
+      await hop(from, to, { dur: 780, lift: .16 });
+      if (NODES[to].online) {
+        float(to, "Internet found", "ok", 2400);
+        banner("Path found", "A stranger's phone carries it the last mile", "net");
+        await sleep(1300); hideBanner();
+      } else {
+        float(to, "Stored", "gold", 1100);
+        await sleep(250);
+      }
+    }
+
+    setStatus('INTERNET UPLINK · <span class="hl">BOUNCEPAY GATEWAY</span>');
+    const nl = findLink(S.uplink, "gateway"); if (nl) nl.e = 1;
+    await hop(S.uplink, "gateway", { kind: "net", dur: 1100, ease: t => Math.pow(t, 1.6) });
+    hidePacket(); ring("gateway", COL.net, 190, 1200);
+
+    await verify();
+    banner("Payment settled", `₹250 · carried by ${r.length - 1} phones`, "ok");
+    ring("gateway", COL.ok, 320, 1500);
+    hold("gateway", false);
+    await sleep(1600); hideBanner();
+
+    setStatus("RECEIPT RETURNING THROUGH THE CROWD");
+    showPacket("gateway", "ok");
+    await hop("gateway", S.uplink, { kind: "net", dur: 560, col: COL.ok, ok: true });
+    for (let i = r.length - 1; i > 0; i--)
+      await hop(r[i], r[i - 1], { dur: 300, col: COL.ok, ok: true, lift: .12 });
+    await hop("cbuyer", "stall", { dur: 400, col: COL.ok, ok: true, lift: .10 });
+    hidePacket();
+
+    screen("cbuyer", { label: "BouncePay", big: "✓", chip: "Payment complete", chipCls: "ok" });
+    const st = NODES.stall;
+    st.el.classList.add("paid"); pulse("stall", rgba(COL.ok, .9));
+    $(".tl", st.el).textContent = "Settled";
+    $(".tv", st.el).textContent = "₹250";
+    float("stall", "Settled · ₹250", "ok", 4200);
+    ring("stall", COL.ok, 200, 1200);
+    setStatus('<span class="hl">SETTLED</span> · THE CROWD WAS THE NETWORK');
+  } catch (e) { if (e !== ABORT) console.error(e); }
+  finally { if (tok === S.token) { S.running = false; sync(); } }
+}
+
+/* ── controls ────────────────────────────────────────────────────────── */
+function sync() {
+  const crowd = S.scene === "crowd";
+  const waiting = !!S.wait;
+  el.bPay.disabled    = S.running;
+  el.bPay.classList.toggle("hint", !S.running && !S.intro);
+  el.bRelay.disabled  = crowd || S.running || chainIds().length >= MAX_CHAIN;
+  el.bRelay.style.display  = crowd ? "none" : "";
+  el.bDisc.style.display  = crowd ? "none" : "";
+  el.bRecon.style.display = crowd ? "none" : "";
+  el.bDisc.disabled  = !S.bridge;
+  el.bRecon.disabled = S.bridge;
+  el.bRecon.classList.toggle("next", !S.bridge && waiting);
+  $$(".tab").forEach(t => t.classList.toggle("sel", t.dataset.scene === S.scene));
+}
+
+el.bPay.onclick = () => (S.scene === "crowd" ? payCrowd() : pay());
+el.nodes.addEventListener("click", e => {
+  if (e.target.closest(".s-btn") && !S.running) el.bPay.click();
+});
+el.bReplay.onclick = () => {
+  abortRun(); hideBanner(); alertOff(); hidePacket(); clearFloats(); flowReset();
+  $$(".node").forEach(n => n.classList.remove("act"));
+  if (S.scene === "crowd") { idleCrowd(); payCrowd(); }
+  else { idleCampus(); pay(); }
+};
+el.bRelay.onclick = () => {
+  if (chainIds().length >= MAX_CHAIN) return;
+  abortRun(); hidePacket(); hideBanner(); clearFloats();
+  S.relays++;
+  const id = "r" + (S.relays - 1);
+  addPhone(id, { name: "Relay " + S.relays, online: false });
+  // rebuild chain links
+  LINKS.filter(l => l.type === "bt").forEach(l => l.el && l.el.remove());
+  LINKS = LINKS.filter(l => l.type !== "bt");
+  const c = chainIds();
+  for (let i = 0; i < c.length - 1; i++) link(c[i], c[i + 1], "bt", { label: "Bluetooth" });
+  const n = NODES[id];
+  n.el.style.transition = "none";
+  layout();
+  requestAnimationFrame(() => { n.el.style.transition = ""; });
+  n.el.classList.add("spawn");
+  setTimeout(() => n.el.classList.remove("spawn"), 800);
+  idleCampus(); buildFlow(); sync();
+  setStatus(`MESH EXPANDED · ${c.length} PHONES CARRY THE PACKET`);
+  float(id, "Joined the mesh", "bt", 2000);
+  ring(id, COL.bt, 120, 1100);
+};
+function setBridge(on) {
+  if (S.bridge === on) return;
+  S.bridge = on;
+  setOnline("bridge", S.bridge);
+  const nl = findLink("bridge", "gateway"); if (nl) nl.e = 1;
+  if (S.bridge) {
+    ring("bridge", COL.net, 160, 1100);
+    float("bridge", "Internet restored", "ok", 2000);
+    if (!S.running) screen("bridge", { label: "BouncePay", big: "Online", bigCls: "small", chip: "Bridge ready", chipCls: "ok" });
+    if (S.wait) { const w = S.wait; S.wait = null; w.res(); }
+    else setStatus("BRIDGE BACK ONLINE · PRESS PAY");
+  } else {
+    ring("bridge", COL.dead, 140, 1000);
+    float("bridge", "Internet lost", "bad", 2200);
+    if (!S.running) screen("bridge", { label: "BouncePay", big: "Offline", bigCls: "small", chip: "No internet", chipCls: "bad" });
+    setStatus(S.running ? "BRIDGE LOST · PACKET WILL BE HELD ON THE RELAY"
+                        : "BRIDGE OFFLINE · PRESS PAY TO SEE STORE & FORWARD");
+  }
+  sync();
+}
+el.bDisc.onclick  = () => setBridge(false);
+el.bRecon.onclick = () => setBridge(true);
+$$(".tab").forEach(t => t.onclick = () => goScene(t.dataset.scene));
+
+function goScene(name) {
+  if (S.scene === name) return;
+  el.stage.style.transition = "opacity .45s ease";
+  el.stage.style.opacity = 0;
+  setTimeout(() => {
+    if (name === "crowd") {
+      S.seenCrowd = true;
+      buildCrowd();
+      setStatus("A FESTIVAL. 18,000 PHONES. THE CELL NETWORK IS DEAD.");
+      el.flow.style.display = "none";
+    } else {
+      buildCampus();
+      setStatus("A SHOP WITH NO INTERNET. A BUYER WITH NO INTERNET.");
+      el.flow.style.display = "";
+    }
+    sync();
+    el.stage.style.opacity = 1;
+    setTimeout(() => { if (S.scene === "crowd") payCrowd(); else sync(); }, 900);
+  }, 460);
+}
+
+/* ── boot ───────────────────────────────────────────────────────────── */
+requestAnimationFrame(frame);
+seedDust();
+resize();
+buildCampus();
+sync();
+setStatus("A SHOP WITH NO INTERNET. A BUYER WITH NO INTERNET.");
+
+window.BounceDemo = {
+  resize,
+  syncPalette,
+  start() { if (!S.started && !S.running) { S.started = true; pay(); } }
+};
+
+})();
+</script>
+</body>
+</html>
