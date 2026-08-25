@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>BouncePay — Payments that bounce until they connect</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="author" content="Alan James, Anuroop Phukan, Ishaan Sridharan">
+<meta name="description" content="BouncePay carries a payment from an offline phone through nearby devices over Bluetooth until it reaches one with connectivity.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -914,8 +916,35 @@ h2.sh{font-size:clamp(26px,3.4vw,40px);font-weight:500;letter-spacing:-.01em;lin
 #caption b{color:var(--ink);font-weight:600}
 
 /* footer */
-footer{position:relative;z-index:2;padding:54px 0 60px;
+footer{position:relative;z-index:2;padding:48px 0 60px;
   border-top:1px solid var(--md-outline-variant);margin-top:40px}
+.team{display:flex;flex-wrap:wrap;align-items:center;gap:16px 26px;
+  padding-bottom:30px;margin-bottom:26px;
+  border-bottom:1px solid var(--md-outline-variant)}
+.team-k{font-size:12px;font-weight:500;letter-spacing:.10em;text-transform:uppercase;
+  color:var(--md-primary)}
+.team-list{display:flex;flex-wrap:wrap;gap:10px;list-style:none}
+.team-list li{
+  display:inline-flex;align-items:center;gap:11px;
+  padding:6px 18px 6px 6px;border-radius:999px;
+  background:var(--md-surface-container);color:var(--md-on-surface);
+  font-size:14px;font-weight:500;letter-spacing:.01em;white-space:nowrap;
+  transition:background var(--md-dur) var(--md-ease),
+             transform var(--md-dur) var(--md-ease),
+             box-shadow var(--md-dur) var(--md-ease);
+}
+.team-list li:hover{background:var(--md-surface-container-high);
+  transform:translateY(-2px);box-shadow:var(--md-elev-1)}
+.team-list .av{
+  width:30px;height:30px;border-radius:999px;flex:none;display:grid;place-items:center;
+  background:var(--md-primary-container);color:var(--md-on-primary-container);
+  font-size:11px;font-weight:500;letter-spacing:.03em;
+}
+@media (max-width:640px){
+  .team{gap:12px 16px}
+  .team-list li{font-size:13px;padding:5px 15px 5px 5px}
+  .team-list .av{width:26px;height:26px;font-size:10px}
+}
 .foot{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;
   font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
 
@@ -1272,9 +1301,19 @@ footer{position:relative;z-index:2;padding:54px 0 60px;
 </section>
 
 <footer>
-  <div class="wrap foot">
-    <span>BouncePay · Offline payment mesh</span>
-    <span>Store → carry → forward</span>
+  <div class="wrap">
+    <div class="team">
+      <span class="team-k">Built by</span>
+      <ul class="team-list">
+        <li><span class="av" aria-hidden="true">AJ</span>Alan James</li>
+        <li><span class="av" aria-hidden="true">AP</span>Anuroop Phukan</li>
+        <li><span class="av" aria-hidden="true">IS</span>Ishaan Sridharan</li>
+      </ul>
+    </div>
+    <div class="foot">
+      <span>BouncePay · Offline payment mesh</span>
+      <span>Store → carry → forward</span>
+    </div>
   </div>
 </footer>
 </main>
