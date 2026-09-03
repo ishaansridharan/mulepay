@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BouncePay — Offline-First Material You Payment Network</title>
+  <meta name="description" content="BouncePay keeps digital payments functioning during Internet outages using Bluetooth Low Energy (BLE) store-and-forward mesh routing." />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+
+  <!-- Google Fonts: Roboto (Material Design 3 Canonical Typeface) & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <!-- Stylesheets -->
+  <script type="module" crossorigin src="./assets/index-EEqA8Ngc.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-C26Vj9Rx.css">
+</head>
+<body>
+  <!-- Atmospheric Material You Layer: Organic Layered Blur Shapes -->
+  <div class="md-ambient-layer" aria-hidden="true">
+    <div class="md-blur-shape-1"></div>
+    <div class="md-blur-shape-2"></div>
+    <div class="md-blur-shape-3"></div>
+  </div>
+
+  <div class="bp-app">
+    
+    <header class="bp-header">
+      <!-- Prominent Brand Title Card (Wider, Higher Authority, Clear Resilience Messaging) -->
+      <div class="bp-brand-card">
+        <div class="bp-brand-header-line">
+          <span class="bp-brand-name">BouncePay</span>
+          <span class="bp-badge-backup">OFFLINE PAYMENT BACKUP LAYER</span>
+          <span class="bp-badge-context">FAILOVER ON INTERNET OUTAGES</span>
+        </div>
+        <div class="bp-brand-subtitle">
+          Payment resilience during network failure: Authenticates offline transactions over BLE & routes via store-and-forward mesh until internet settlement.
+        </div>
+      </div>
+
+      <div class="bp-header-right">
+        <!-- Hardware / Network Status Indicators in Header -->
+        <div class="header-status-indicators">
+          <span class="hsi-item">Internet: <b id="topInternetStatus" class="status-off">OFFLINE</b></span>
+          <span class="hsi-separator">•</span>
+          <span class="hsi-item">BLE: <b id="topBleStatus" class="status-on">ACTIVE</b></span>
+        </div>
+
+        <!-- Demo Mode Navigation Toggle (Pill Buttons) -->
+        <div class="bp-header-actions">
+          <button id="btnHeroDemo" class="btn-hero-demo active" title="Run store-and-forward mesh sequence" type="button">
+            <span class="btn-text-content">STORE & FORWARD</span>
+          </button>
+          <button id="btnDirectDemo" class="btn-hero-demo btn-direct-nav" title="Demonstrate direct point-to-point BLE payment" type="button">
+            <span class="btn-text-content">DIRECT BLE</span>
+          </button>
+          <button id="btnReset" class="btn-icon-minimal" title="Reset Prototype" type="button">
+            <span>↺</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Presentation 3-Column Layout -->
+    <main class="bp-grid">
+      
+      <!-- =================================================================
+           LEFT COLUMN: iQOO PHONE (Customer Payment Device)
+           ================================================================= -->
+      <section class="col-phone" aria-label="Customer Payment Phone">
+        <div class="device-caption-label">
+          CUSTOMER DEVICE • OFFLINE (iQOO 12 PRO)
+        </div>
+
+        <div class="iqoo-phone-frame">
+          <div class="phone-screen-clean">
+            <!-- Minimal Status Bar -->
+            <div class="phone-top-status">
+              <span id="phoneClock">20:48</span>
+              <div class="phone-camera-slit"></div>
+              <span style="font-size: 11px; font-weight: 500;">88%</span>
+            </div>
+
+            <!-- Phone Inner Clean Payment Screen -->
+            <div class="phone-inner-content">
+              <div>
+                <div class="phone-brand-title">BOUNCEPAY</div>
+                <div class="phone-offline-badge">
+                  <span class="amber-dot"></span>
+                  <span>OFFLINE MODE</span>
+                </div>
+              </div>
+
+              <!-- Main Amount & Target Merchant (Standard View) -->
+              <div class="phone-center-pay-block" id="phoneNormalView">
+                <div class="phone-merchant-name" id="phoneMerchantLabel" title="Click to cycle merchant">
+                  Campus Stationery ▾
+                </div>
+                <div class="phone-amount-display" id="phoneAmountDisplay">₹500</div>
+
+                <!-- Quick Amount Chips (Material 3 Pill Chips) -->
+                <div class="phone-quick-chips" id="phoneQuickChips">
+                  <button class="p-chip" data-amt="100" type="button">₹100</button>
+                  <button class="p-chip" data-amt="250" type="button">₹250</button>
+                  <button class="p-chip active" data-amt="500" type="button">₹500</button>
+                  <button class="p-chip" data-amt="1000" type="button">₹1,000</button>
+                </div>
+                
+                <div class="phone-offline-balance-row">
+                  <span class="phone-balance-label">Offline Balance</span>
+                  <span class="phone-balance-val" id="phoneBalanceVal">₹2,000</span>
+                  <button id="btnTopupQuota" class="btn-topup-quota" style="display: none;" type="button">+ Reload ₹2,000 Quota</button>
+                </div>
+
+                <!-- Funds Warning Box -->
+                <div id="fundsWarningBox" class="funds-warning-box">
+                  <span>⚠️</span>
+                  <span id="fundsWarningText">Funds not available</span>
+                </div>
+              </div>
+
+              <!-- Direct BLE Mode: Token Created State in Phone -->
+              <div id="phoneTokenCreatedView" class="phone-token-created-view" style="display: none;">
+                <div class="ptc-badge">PAYMENT TOKEN CREATED</div>
+                <div class="ptc-amount" id="ptcAmountDisplay">₹500</div>
+
+                <div class="ptc-box">
+                  <div class="ptc-row">
+                    <span class="ptc-lbl">Token:</span>
+                    <span class="ptc-val font-mono">BP-7F92A1</span>
+                  </div>
+                  <div class="ptc-row">
+                    <span class="ptc-lbl">Recipient:</span>
+                    <span class="ptc-val" id="ptcRecipient">Campus Stationery</span>
+                  </div>
+                  <div class="ptc-row">
+                    <span class="ptc-lbl">Status:</span>
+                    <span class="ptc-val status-transfer" id="ptcStatus">● Ready to transfer</span>
+                  </div>
+                </div>
+
+                <div class="ptc-transferring-pulse">
+                  <span class="ble-signal-waves">📡</span>
+                  <span>Anonymized BLE Broadcast</span>
+                </div>
+              </div>
+
+              <!-- Action & Hardware Footer -->
+              <div>
+                <button id="btnPayNow" class="btn-phone-pay" type="button">
+                  <span class="btn-text-content" id="btnPayText">PAY ₹500</span>
+                </button>
+
+                <div class="phone-bluetooth-status">
+                  <span class="ble-dot"></span>
+                  <span id="phoneBleStatusLabel">Bluetooth Connected</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Home Indicator -->
+            <div class="phone-bottom-home-bar">
+              <span></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           CENTER COLUMN: PAYMENT NETWORK / DIRECT BLE CONNECTION
+           ================================================================= -->
+      <section class="col-network" aria-label="Payment Route and BLE Connection">
+        <div class="network-header-row">
+          <h2 class="network-title" id="centerPanelTitle">STORE & FORWARD MESH ROUTING</h2>
+          
+          <div id="networkBadge" class="network-status-badge offline">
+            <span class="pulse-indicator offline" id="netPulseDot"></span>
+            <span id="netBadgeText">INTERNET OFFLINE</span>
+          </div>
+        </div>
+
+        <!-- VIEW 1: HERO DEMO (5-Node Mesh Route Track) -->
+        <div id="heroRouteView" class="route-track-container">
+          <!-- 5 Clean Route Nodes -->
+          <div class="route-nodes-list">
+            <!-- Background and Active Connecting Rails placed inside node list aligned with bubbles -->
+            <div class="route-rail-line"></div>
+            <div id="routeRailActive" class="route-rail-active"></div>
+
+            <!-- Animated Traveling Packet Pill -->
+            <div id="travelingPacket" class="traveling-packet-pill">₹500</div>
+
+            <!-- Node 1: Customer -->
+            <div id="nodeCustomer" class="route-node-item active" data-step="1">
+              <div class="node-circle-bubble">📱</div>
+              <div class="node-card-content">
+                <div class="node-header-line">
+                  <span class="node-primary-title">Customer</span>
+                  <span class="node-step-tag">ORIGIN</span>
+                </div>
+                <div class="node-sub-role">iQOO Phone • Payment Origin</div>
+              </div>
+            </div>
+
+            <!-- Node 2: Relay 01 -->
+            <div id="nodeRelay1" class="route-node-item" data-step="3">
+              <div class="node-circle-bubble">📲</div>
+              <div class="node-card-content">
+                <div class="node-header-line">
+                  <span class="node-primary-title">Relay 01</span>
+                  <span class="node-step-tag">BLE HOP 1</span>
+                </div>
+                <div class="node-sub-role">Nearby Phone • BLE Store & Forward</div>
+              </div>
+            </div>
+
+            <!-- Node 3: Relay 02 -->
+            <div id="nodeRelay2" class="route-node-item" data-step="4">
+              <div class="node-circle-bubble">📲</div>
+              <div class="node-card-content">
+                <div class="node-header-line">
+                  <span class="node-primary-title">Relay 02</span>
+                  <span class="node-step-tag">BLE HOP 2</span>
+                </div>
+                <div class="node-sub-role">Nearby Phone • Mesh Relay Hop</div>
+              </div>
+            </div>
+
+            <!-- Node 4: Internet Gateway -->
+            <div id="nodeGateway" class="route-node-item" data-step="5">
+              <div class="node-circle-bubble">🌐</div>
+              <div class="node-card-content">
+                <div class="node-header-line">
+                  <span class="node-primary-title">Internet Gateway</span>
+                  <span class="node-step-tag gateway-tag">CELLULAR 5G</span>
+                </div>
+                <div class="node-sub-role">Connected Phone • Ingestion Gateway</div>
+              </div>
+            </div>
+
+            <!-- Node 5: BouncePay Backend -->
+            <div id="nodeBackend" class="route-node-item" data-step="6">
+              <div class="node-circle-bubble">🏦</div>
+              <div class="node-card-content">
+                <div class="node-header-line">
+                  <span class="node-primary-title">BouncePay Backend</span>
+                  <span class="node-step-tag backend-tag">SETTLED</span>
+                </div>
+                <div class="node-sub-role">Clearing Cloud • Bank Settlement</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 2: DIRECT BLE MODE (Clean Direct Peer-to-Peer Connection) -->
+        <div id="directBleView" class="direct-ble-container" style="display: none;">
+          <!-- Top Customer Device -->
+          <div class="direct-device-card customer" id="dNodeCustomer">
+            <div class="ddc-icon">📱</div>
+            <div class="ddc-info">
+              <div class="ddc-name">iQOO CUSTOMER</div>
+              <div class="ddc-role">Primary Payment Device • BLE Active</div>
+            </div>
+          </div>
+
+          <!-- Direct Connection Rail & Traveling Golden Token Card -->
+          <div class="direct-connection-rail">
+            <div class="direct-rail-line"></div>
+            <div class="direct-rail-active" id="directRailActive"></div>
+            
+            <div class="direct-ble-pill">
+              <span class="ble-pulse-dot"></span>
+              <span>Bluetooth Direct Channel</span>
+            </div>
+
+            <!-- Physical Digital Card Token Object -->
+            <div id="directTokenCard" class="direct-token-card">
+              <div class="dtc-header">
+                <span class="dtc-title">BOUNCEPAY TOKEN</span>
+                <span class="dtc-lock">🔒</span>
+              </div>
+              <div class="dtc-body">
+                <div class="dtc-amount" id="dtcAmountDisplay">₹500</div>
+                <div class="dtc-id">BP-7F92A1</div>
+              </div>
+              <div class="dtc-footer">
+                <span class="dtc-auth">✓ AUTHENTICATED</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Merchant Device -->
+          <div class="direct-device-card merchant" id="dNodeMerchant">
+            <div class="ddc-icon">📲</div>
+            <div class="ddc-info">
+              <div class="ddc-name">MERCHANT PHONE</div>
+              <div class="ddc-role">Campus Stationery • Offline Receiving</div>
+            </div>
+          </div>
+
+          <!-- Direct Step-by-Step Sequence Checklist -->
+          <div class="direct-step-checklist">
+            <div class="direct-step-row" id="dsRow1"><span class="ds-icon">○</span> Token Created</div>
+            <div class="direct-step-row" id="dsRow2"><span class="ds-icon">○</span> Encrypted</div>
+            <div class="direct-step-row" id="dsRow3"><span class="ds-icon">○</span> BLE Transfer</div>
+            <div class="direct-step-row" id="dsRow4"><span class="ds-icon">○</span> Merchant Received</div>
+            <div class="direct-step-row" id="dsRow5"><span class="ds-icon">○</span> Signature Verified</div>
+            <div class="direct-step-row" id="dsRow6"><span class="ds-icon">○</span> Token Accepted</div>
+          </div>
+        </div>
+
+        <!-- Step-by-Step State Progress Indicator (Pill Card) -->
+        <div class="step-ticker-card">
+          <div id="stepNumber" class="step-num-badge">STEP 1 OF 7</div>
+          <div id="stepDescription" class="step-desc-text">Ready to initiate payment</div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           RIGHT COLUMN: MERCHANT SIDE (Receiving & Settlement Terminal)
+           ================================================================= -->
+      <section class="col-result" aria-label="Merchant Side Receiving and Settlement">
+        <div>
+          <div class="merchant-caption-label">
+            <span class="pos-dot"></span>
+            <span id="resultCaptionText">MERCHANT TERMINAL • OFFLINE RECEIVING</span>
+          </div>
+
+          <div class="result-section-header">
+            <span id="resultMainTitle">MERCHANT TERMINAL (POS #BP-01)</span>
+            <span class="pos-id-tag" id="resultPosTag">SMART POS</span>
+          </div>
+
+          <!-- Merchant Incoming Payment Block -->
+          <div class="result-headline-block">
+            <div class="merchant-incoming-badge" id="merchantRecvPill">PAYMENT RECEIVED</div>
+            <div class="result-big-amount" id="resultBigAmount">+₹500</div>
+            <div class="result-merchant-label" id="resultMerchantLabel">Campus Stationery</div>
+            <div class="merchant-payer-subtext" id="merchantPayerSubtext">From: BouncePay Customer</div>
+          </div>
+
+          <!-- Checklist 1: Hero Store & Forward Checks -->
+          <div class="result-check-list" id="heroCheckList">
+            <div id="chkAuth" class="result-check-item">
+              <div class="result-check-icon">✓</div>
+              <span>Offline Credential Authenticated</span>
+            </div>
+            <div id="chkVer" class="result-check-item">
+              <div class="result-check-icon">✓</div>
+              <span>Digital Signature Verified</span>
+            </div>
+            <div id="chkSet" class="result-check-item">
+              <div class="result-check-icon">✓</div>
+              <span>Settled to Merchant Account</span>
+            </div>
+          </div>
+
+          <!-- Checklist 2: Direct BLE Checks -->
+          <div class="result-check-list" id="directCheckList" style="display: none;">
+            <div id="chkDirect1" class="result-check-item">
+              <div class="result-check-icon">✓</div>
+              <span>Token Received</span>
+            </div>
+            <div id="chkDirect2" class="result-check-item">
+              <div class="result-check-icon">✓</div>
+              <span>Signature Verified</span>
+            </div>
+            <div id="chkDirect3" class="result-check-item">
+              <div class="result-check-icon">✓</div>
+              <span>Token Valid</span>
+            </div>
+            <div id="chkDirect4" class="result-check-item">
+              <div class="result-check-icon">✓</div>
+              <span>No Duplicate</span>
+            </div>
+          </div>
+
+          <!-- Large Final Status Banner (Pill Shape) -->
+          <div id="resultStatusBanner" class="result-status-banner">
+            READY TO RECEIVE PAYMENT
+          </div>
+
+          <!-- Balances Section 1: Hero Mode (Merchant Account & Daily Revenue) -->
+          <div class="result-balance-grid" id="heroBalanceGrid">
+            <div class="balance-diff-box">
+              <div class="balance-diff-user">Merchant Account</div>
+              <div class="balance-diff-numbers">
+                <span id="merchBalanceOld">₹2,000</span>
+                <span class="balance-arrow">➔</span>
+                <span id="merchBalanceTarget" style="color: var(--md-sys-color-success);">₹2,000</span>
+              </div>
+            </div>
+
+            <div class="balance-diff-box">
+              <div class="balance-diff-user">Today's Offline Revenue</div>
+              <div class="balance-diff-numbers">
+                <span id="merchantTodayRev" style="color: var(--md-sys-color-primary);">₹0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Balances Section 2: Direct BLE Mode (Offline Value Visualization) -->
+          <div class="result-balance-grid" id="directBalanceGrid" style="display: none;">
+            <div class="balance-diff-box">
+              <div class="balance-diff-user" id="directValLabel1">Customer Offline Value</div>
+              <div class="balance-diff-numbers">
+                <span id="directValOld1">₹2,000</span>
+                <span class="balance-arrow">➔</span>
+                <span id="directValTarget1" style="color: var(--md-sys-color-primary);">₹2,000</span>
+              </div>
+            </div>
+
+            <div class="balance-diff-box">
+              <div class="balance-diff-user" id="directValLabel2">Merchant Offline Value</div>
+              <div class="balance-diff-numbers">
+                <span id="directValOld2">₹0</span>
+                <span class="balance-arrow">➔</span>
+                <span id="directValTarget2" style="color: var(--md-sys-color-success);">₹0 received</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Direct BLE Sync Button (Pill CTA) -->
+          <button id="btnSyncOnline" class="btn-sync-cta" style="display: none;" type="button">
+            <span>🌐 SYNC WHEN ONLINE</span>
+          </button>
+
+          <!-- Accept Next Payment Button & Ledger Summary Pill -->
+          <button id="btnResultNewPayment" class="btn-new-payment-cta" style="display: none;" type="button">
+            <span>+ Accept Next Customer Payment</span>
+          </button>
+          <div class="ledger-summary-pill" id="ledgerSummaryPill">
+            Merchant POS • Ready
+          </div>
+        </div>
+
+        <!-- Small Expandable: View Security & Settlement Details -->
+        <div class="security-accordion">
+          <button id="btnToggleSec" class="btn-toggle-security" type="button">
+            <span id="secToggleLabel">[ View Security Details ]</span>
+          </button>
+
+          <!-- Drawer Content -->
+          <div id="secDrawer" class="security-drawer-content">
+            <div id="secDetailsHero">
+              <div class="sec-verified-row">✓ ECDSA P-256 Asymmetric Signature Verified</div>
+              <div class="sec-verified-row">✓ Merchant Terminal Credit Confirmed</div>
+              <div>• Nonce: 0x8F7A1C90E2B4 (Single-use)</div>
+              <div>• Clearing Reference: SETTLE-BP-9821</div>
+              <div class="sec-verified-row">✓ Duplicate Ingestion Check: PASSED</div>
+              <div class="sec-verified-row">✓ Double-Spend Verification: RECONCILED</div>
+            </div>
+            <div id="secDetailsDirect" style="display: none;">
+              <div class="sec-verified-row">✓ Digital Signature: Verified</div>
+              <div class="sec-verified-row">✓ Token Integrity: Valid</div>
+              <div>• Transaction ID: BP-7F92A1</div>
+              <div class="sec-verified-row">✓ Replay Protection: Active</div>
+              <div>• Offline Limit: ₹2,000</div>
+              <div>• Transfer Method: BLE Direct P2P</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+</body>
+</html>
