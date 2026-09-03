@@ -240,71 +240,6 @@ h2.sh{font-size:clamp(26px,3.4vw,40px);font-weight:500;letter-spacing:-.01em;lin
   letter-spacing:0;line-height:1.25;color:var(--md-on-surface-variant);max-width:22ch;
 }
 
-/* flow strip */
-.strip{
-  position:relative;margin-top:clamp(46px,7vw,74px);
-  display:flex;align-items:flex-start;gap:0;
-  padding:30px 26px;border-radius:32px;
-  background:var(--md-surface-container);border:none;box-shadow:var(--md-elev-1);
-  transition:background var(--md-dur) var(--md-ease),box-shadow var(--md-dur) var(--md-ease);
-}
-.fnode{
-  position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:11px;
-  flex:none;width:clamp(86px,12vw,132px);text-align:center;
-}
-.fglyph{
-  width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
-  border:1px solid var(--md-outline-variant);background:var(--md-surface-container-high);
-  color:var(--md-on-surface-variant);transition:all var(--md-dur) var(--md-ease);
-}
-.fnode.off .fglyph{color:var(--bad);border-color:rgba(255,90,106,.32);
-  box-shadow:0 0 24px -10px rgba(255,90,106,.8)}
-.fnode.on .fglyph{color:var(--net);border-color:rgba(47,240,200,.4);
-  box-shadow:0 0 26px -8px rgba(47,240,200,.85)}
-.fnode.gate .fglyph{color:var(--pur);border-color:rgba(139,124,255,.42);
-  box-shadow:0 0 26px -8px rgba(139,124,255,.9)}
-.fnode span{font-family:var(--mono);font-size:8.5px;letter-spacing:.15em;
-  text-transform:uppercase;color:var(--muted);line-height:1.5}
-.fwire{
-  position:relative;flex:1 1 auto;min-width:44px;height:1px;margin-top:19px;
-  background:repeating-linear-gradient(90deg,rgba(92,140,255,.62) 0 4px,transparent 4px 10px);
-  box-shadow:0 0 9px rgba(92,140,255,.3);
-}
-.fwire.net{background:linear-gradient(90deg,rgba(47,240,200,.6),rgba(139,124,255,.6));
-  box-shadow:0 0 9px rgba(47,240,200,.3)}
-.fwire i{
-  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  font-family:var(--mono);font-size:7.5px;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--md-on-surface-variant);font-style:normal;background:var(--md-surface-container-highest);
-  padding:4px 8px;border-radius:99px;border:1px solid var(--md-outline-variant);white-space:nowrap;
-}
-.fpk{
-  position:absolute;top:34px;left:0;z-index:3;width:22px;height:22px;border-radius:7px;
-  background:linear-gradient(150deg,#ffe0a0,#ffb545);
-  box-shadow:0 0 20px rgba(255,180,70,.75),inset 0 1px 0 rgba(255,255,255,.6);
-  display:grid;place-items:center;opacity:0;
-  transition:opacity .35s ease,background .5s ease,box-shadow .5s ease;
-}
-.fpk.ok{background:linear-gradient(150deg,#b6ffdc,#3fe89b);
-  box-shadow:0 0 24px rgba(47,224,141,.8),inset 0 1px 0 rgba(255,255,255,.6)}
-.fpk.ok svg{color:#00381f}
-.fpk svg{display:block;color:#4a2c00}
-/* without / with */
-.compare{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
-.cmp{
-  display:flex;align-items:center;gap:12px;padding:12px 20px;border-radius:999px;
-  border:none;background:var(--md-surface-container-high);
-  font-size:13px;font-weight:500;letter-spacing:.01em;
-  color:var(--md-on-surface-variant);
-  transition:background var(--md-dur) var(--md-ease),color var(--md-dur) var(--md-ease);
-}
-.cmp b{font-weight:500}
-.cmp.bad{background:var(--md-error-container);color:var(--md-on-error-container)}
-.cmp.bad b{color:var(--md-on-error-container)}
-.cmp.good{background:var(--md-secondary-container);color:var(--md-on-secondary-container)}
-.cmp.good b{color:var(--md-on-secondary-container)}
-.cmp .ar{opacity:.6}
-
 /* ── HOW IT WORKS ────────────────────────────────────────────────────── */
 .howgrid{margin-top:clamp(44px,6vw,64px)}
 .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));
@@ -562,15 +497,6 @@ footer{position:relative;z-index:2;padding:48px 0 60px;
   .card .vis{height:130px}
 }
 @media (max-width:760px){
-  .strip{flex-direction:column;gap:0;padding:24px 18px;align-items:flex-start}
-  .fnode{width:100%;flex-direction:row;justify-content:flex-start;gap:14px;text-align:left}
-  .fwire{width:1px;height:30px;min-width:0;margin-left:19px;margin-top:0;flex:none;
-    background:repeating-linear-gradient(180deg,rgba(92,140,255,.5) 0 4px,transparent 4px 10px)}
-  .fwire.net{background:linear-gradient(180deg,rgba(47,240,200,.55),rgba(139,124,255,.55))}
-  .fwire i{left:34px;top:50%;transform:translateY(-50%)}
-  .fpk{display:none}
-}
-@media (max-width:760px){
   #flow{display:none !important}       /* the rail cannot shrink; status line narrates instead */
   .phead{justify-content:center}
 }
@@ -627,62 +553,6 @@ footer{position:relative;z-index:2;padding:48px 0 60px;
       that is <b>online</b>.
     </p>
 
-    <div class="strip rv">
-      <div class="fnode off">
-        <div class="fglyph">
-          <svg width="15" height="20" viewBox="0 0 15 20" fill="none">
-            <rect x=".7" y=".7" width="13.6" height="18.6" rx="2.6" stroke="currentColor" stroke-width="1.2"/>
-            <path d="M4 6.5 11 13.5M11 6.5 4 13.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <span>Disconnected<br>phone</span>
-      </div>
-      <div class="fwire"><i>Bluetooth</i></div>
-      <div class="fnode">
-        <div class="fglyph">
-          <svg width="20" height="18" viewBox="0 0 20 18" fill="none">
-            <circle cx="4" cy="5" r="2.2" stroke="currentColor" stroke-width="1.2"/>
-            <circle cx="16" cy="5" r="2.2" stroke="currentColor" stroke-width="1.2"/>
-            <circle cx="10" cy="13" r="2.2" stroke="currentColor" stroke-width="1.2"/>
-            <path d="M6 6.2 8.6 11.4M13.9 6.2 11.4 11.4M6.2 5h7.6" stroke="currentColor"
-                  stroke-width="1.1" opacity=".65"/>
-          </svg>
-        </div>
-        <span>Nearby<br>devices</span>
-      </div>
-      <div class="fwire"><i>Bluetooth</i></div>
-      <div class="fnode on">
-        <div class="fglyph">
-          <svg width="20" height="16" viewBox="0 0 20 16" fill="none">
-            <path d="M1.4 5.2a12 12 0 0 1 17.2 0M4.6 8.6a7.6 7.6 0 0 1 10.8 0" stroke="currentColor"
-                  stroke-width="1.3" stroke-linecap="round"/>
-            <circle cx="10" cy="12.6" r="1.7" fill="currentColor"/>
-          </svg>
-        </div>
-        <span>Device with<br>internet</span>
-      </div>
-      <div class="fwire net"><i>Internet</i></div>
-      <div class="fnode gate">
-        <div class="fglyph">
-          <svg width="21" height="14" viewBox="0 0 21 14" fill="none">
-            <path d="M5.6 12.4h10a4 4 0 0 0 .6-7.9A5.2 5.2 0 0 0 7.4 3.2 3.8 3.8 0 0 0 5.6 12.4Z"
-                  stroke="currentColor" stroke-width="1.2" fill="rgba(139,124,255,.12)"/>
-          </svg>
-        </div>
-        <span>Payment<br>gateway</span>
-      </div>
-      <div class="fpk">
-        <svg width="10" height="11" viewBox="0 0 15 17" fill="none">
-          <rect x="1.2" y="7" width="12.6" height="9" rx="2.4" fill="currentColor"/>
-          <path d="M4.2 7V4.8a3.3 3.3 0 0 1 6.6 0V7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
-        </svg>
-      </div>
-    </div>
-
-    <div class="compare rv">
-      <div class="cmp bad"><span>Without BouncePay</span><span class="ar">→</span><b>Payment failed</b></div>
-      <div class="cmp good"><span>With BouncePay</span><span class="ar">→</span><b>₹250 settled</b></div>
-    </div>
   </div>
 </section>
 
@@ -915,7 +785,7 @@ footer{position:relative;z-index:2;padding:48px 0 60px;
 
 <script>
 /* ============================================================
-   SITE — nav, reveals, about strip
+   SITE — nav, reveals, demo mount
    ============================================================ */
 (() => {
 "use strict";
@@ -976,89 +846,6 @@ const rev = new IntersectionObserver(es => {
   });
 }, { rootMargin: "0px 0px -12% 0px", threshold: .08 });
 $$(".rv").forEach(n => rev.observe(n));
-
-/* ── about: the packet gliding across the flow strip ─────────────────── */
-const strip = $(".strip"), fpk = $(".fpk");
-let stok = 0, sPlaying = false;
-const ssleep = ms => new Promise((res, rej) => {
-  const t = stok; setTimeout(() => (t === stok ? res() : rej(0)), ms);
-});
-function stween(dur, fn, ease) {
-  const t = stok, t0 = performance.now();
-  return new Promise((res, rej) => {
-    (function s(now) {
-      if (t !== stok) return rej(0);
-      const p = Math.min(1, (now - t0) / dur);
-      fn(ease ? ease(p) : (p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2));
-      p < 1 ? requestAnimationFrame(s) : res();
-    })(t0);
-  });
-}
-function stripStops() {
-  const r = strip.getBoundingClientRect();
-  return $$(".fnode", strip).map(n => {
-    const b = n.getBoundingClientRect();
-    return b.left - r.left + b.width / 2 - fpk.offsetWidth / 2;
-  });
-}
-const putPk = (x, sx = 1, sy = sx, y = 0) => {
-  fpk.style.transform = `translate(${x}px,${y}px) scale(${sx},${sy})`;
-};
-
-async function runStrip() {
-  const t = ++stok;
-  try {
-    while (t === stok) {
-      if (!fpk.offsetParent) { await ssleep(1000); continue; }   // hidden on mobile
-      const p = stripStops();
-      const g = $(".fglyph", strip).getBoundingClientRect();
-      fpk.style.top = (g.top - strip.getBoundingClientRect().top + g.height / 2 - fpk.offsetHeight / 2) + "px";
-      fpk.classList.remove("ok");
-      fpk.style.opacity = "0";
-      putPk(p[0], .4);
-      await ssleep(420);
-      fpk.style.opacity = "1";
-      await stween(400, k => putPk(p[0], .4 + k * .6));
-      await ssleep(620);
-      for (let i = 0; i < p.length - 1; i++) {
-        if (i === p.length - 2) fpk.classList.add("ok");
-        await stween(740, k => putPk(              // arcs up and over the wire
-          p[i] + (p[i + 1] - p[i]) * k,
-          1 + Math.sin(Math.PI * k) * .16,
-          undefined,
-          -Math.sin(Math.PI * k) * 32
-        ), k => k);
-        await stween(190, k => putPk(p[i + 1], 1 + .28 * (1 - k), 1 - .24 * (1 - k)));
-        await ssleep(430);
-      }
-      await ssleep(1000);
-      fpk.style.opacity = "0";
-      await ssleep(700);
-    }
-  } catch (e) { /* superseded */ }
-}
-const stripView = new IntersectionObserver(es => {
-  es.forEach(e => {
-    if (e.isIntersecting && !sPlaying) { sPlaying = true; runStrip(); }
-    else if (!e.isIntersecting && sPlaying) { sPlaying = false; stok++; fpk.style.opacity = "0"; }
-  });
-}, { threshold: .3 });
-if (strip && fpk && !reduced) stripView.observe(strip);
-
-/* -- built with: click a technology to reveal what it does ------------ */
-$$(".layer").forEach(layer => {
-  const out = $(".ldesc", layer), slot = $("span", out);
-  $$(".chip", layer).forEach(chip => chip.addEventListener("click", () => {
-    const already = chip.classList.contains("open");
-    $$(".chip", layer).forEach(c => {
-      c.classList.remove("open"); c.setAttribute("aria-expanded", "false");
-    });
-    if (already) { out.classList.remove("on"); return; }
-    chip.classList.add("open"); chip.setAttribute("aria-expanded", "true");
-    slot.innerHTML = '<b>' + chip.dataset.n + '</b> — ' + chip.dataset.d;
-    out.classList.add("on");
-  }));
-});
 
 /* ── demo: mount the prototype and map it onto the panel ──────────── */
 const APP_W = 1360, APP_H = 860;
