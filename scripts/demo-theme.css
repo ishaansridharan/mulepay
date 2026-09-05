@@ -158,3 +158,32 @@ html, body {
 .is-embedded .col-result {
   border-color: transparent;
 }
+
+/* --------------------------------------------------------------------------
+   Merchant column, embedded: keep the story (money in, who paid, what was
+   verified, balance moved) and drop what repeats or decorates.
+   -------------------------------------------------------------------------- */
+
+/* "MERCHANT TERMINAL • OFFLINE RECEIVING" — the title right below says this */
+.is-embedded .merchant-caption-label,
+/* "SMART POS" — decorative */
+.is-embedded .pos-id-tag,
+/* "Merchant POS • Ready" — duplicates the READY TO RECEIVE PAYMENT bar */
+.is-embedded .ledger-summary-pill {
+  display: none;
+}
+
+/* The drawer presents simulated ECDSA/nonce detail as if it were real crypto.
+   The prototype does not implement it, and the Built With section is explicit
+   that it is planned, so it stays out of the page. */
+.is-embedded .security-accordion {
+  display: none;
+}
+
+/* Two money tiles for one payment: the account delta already carries it. */
+.is-embedded #heroBalanceGrid .balance-diff-box:nth-child(2) {
+  display: none;
+}
+.is-embedded #heroBalanceGrid {
+  grid-template-columns: 1fr;
+}

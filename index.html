@@ -815,9 +815,9 @@ function fitDemo() {
   const w = demoFrame.clientWidth;
   // leave room for the nav, the panel header and some breathing space, so the
   // whole console is on screen at 100% zoom without scrolling inside it
-  // 570 is the floor at which the prototype's columns stop clipping once a
-  // payment has settled and the merchant panel has filled out; 580 for margin
-  const h = Math.round(Math.min(780, Math.max(580, innerHeight - 300)));
+  // 490 is the floor at which the prototype's columns stop clipping once a
+  // payment has settled; 515 leaves margin for font and rounding differences
+  const h = Math.round(Math.min(780, Math.max(515, innerHeight - 300)));
 
   if (w >= APP_MIN_W) {                 // render at 1:1
     demoApp.style.width = w + "px";
