@@ -1,0 +1,117 @@
+/* ==========================================================================
+   BouncePay prototype — dark theme overlay
+   --------------------------------------------------------------------------
+   The prototype ships a light Material You palette. The marketing site is
+   dark MD3 seeded from the same #6750A4, so rather than restyling the app
+   component by component this file re-points its design tokens at the site's
+   dark palette. The values below are identical to the ones in the site's
+   token layer, so the two stay one design system.
+
+   Loaded after the prototype's own stylesheet; see scripts/build-demo.mjs.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* --- surfaces --------------------------------------------------------- */
+  --md-sys-color-background: #141218;
+  --md-sys-color-on-background: #E6E0E9;
+  --md-sys-color-surface: #141218;
+  --md-sys-color-on-surface: #E6E0E9;
+  --md-sys-color-surface-container-lowest: #0F0D13;
+  --md-sys-color-surface-container-low: #1D1B20;
+  --md-sys-color-surface-container: #211F26;
+  --md-sys-color-surface-container-high: #2B2930;
+  --md-sys-color-surface-container-highest: #36343B;
+
+  /* --- primary ---------------------------------------------------------- */
+  --md-sys-color-primary: #D0BCFF;
+  --md-sys-color-on-primary: #381E72;
+  --md-sys-color-primary-container: #4F378B;
+  --md-sys-color-on-primary-container: #EADDFF;
+
+  /* --- secondary / tertiary --------------------------------------------- */
+  --md-sys-color-secondary: #CCC2DC;
+  --md-sys-color-on-secondary: #332D41;
+  --md-sys-color-secondary-container: #4A4458;
+  --md-sys-color-on-secondary-container: #E8DEF8;
+  --md-sys-color-tertiary: #EFB8C8;
+  --md-sys-color-on-tertiary: #492532;
+  --md-sys-color-tertiary-container: #633B48;
+  --md-sys-color-on-tertiary-container: #FFD8E4;
+
+  /* --- outlines and secondary text -------------------------------------- */
+  --md-sys-color-outline: #938F99;
+  --md-sys-color-outline-variant: #49454F;
+  --md-sys-color-on-surface-variant: #CAC4D0;
+
+  /* --- status ----------------------------------------------------------- */
+  --md-sys-color-error: #F2B8B5;
+  --md-sys-color-error-container: #8C1D18;
+  --md-sys-color-on-error-container: #F9DEDC;
+
+  --md-sys-color-success: #7EDB8F;
+  --md-sys-color-success-container: #0B4A22;
+  --md-sys-color-on-success-container: #95F8BE;
+
+  --md-sys-color-warning: #FFB77C;
+  --md-sys-color-warning-container: #5A2600;
+  --md-sys-color-on-warning-container: #FFDCC5;
+
+  --md-sys-color-ble: #6FD4F2;
+  --md-sys-color-ble-container: #00404F;
+  --md-sys-color-on-ble-container: #B8EAFF;
+
+  /* --- elevation: shadows need to be far heavier on a dark ground ------- */
+  --md-elevation-1: 0 1px 3px rgba(0, 0, 0, .50), 0 1px 2px rgba(0, 0, 0, .32);
+  --md-elevation-2: 0 2px 6px 2px rgba(0, 0, 0, .42), 0 1px 2px rgba(0, 0, 0, .36);
+  --md-elevation-3: 0 4px 8px 3px rgba(0, 0, 0, .44), 0 1px 3px rgba(0, 0, 0, .40);
+  --md-elevation-4: 0 6px 10px 4px rgba(0, 0, 0, .46), 0 2px 3px rgba(0, 0, 0, .42);
+}
+
+/* ==========================================================================
+   Literal colours the tokens cannot reach.
+   The prototype hard-codes a handful of values that assume a light ground;
+   each one is re-pointed at the equivalent token below.
+   ========================================================================== */
+
+/* White-on-primary becomes dark-on-primary, because the dark primary
+   (#D0BCFF) is a light tone — white text on it would fail contrast. */
+.btn-phone-pay.new-payment,
+.traveling-packet-pill,
+.route-node-item.active .node-circle-bubble,
+.direct-device-card.active .ddc-icon,
+.result-check-item.verified .result-check-icon {
+  color: var(--md-sys-color-on-primary);
+}
+
+/* Sticky app header: was a translucent light surface. */
+.bp-header {
+  background: rgba(33, 31, 38, .92);
+}
+
+/* Phone chassis: a dark device reads correctly on a dark stage. */
+.iqoo-phone-frame {
+  background: #2B2930;
+  box-shadow: var(--md-elevation-3);
+}
+
+/* Active-route glows keyed to the light seed. */
+.route-rail-active,
+.direct-rail-active {
+  box-shadow: 0 0 10px rgba(208, 188, 255, .45);
+}
+.direct-device-card.active {
+  box-shadow: 0 0 0 2px rgba(208, 188, 255, .35);
+}
+
+/* The prototype paints its own page background; let it sit flush inside the
+   section's panel instead of drawing a second surface on top of it. */
+html, body {
+  background-color: var(--md-sys-color-background);
+}
+
+/* Scrollbars, so the embedded console does not show light-mode furniture. */
+::-webkit-scrollbar-track { background: var(--md-sys-color-surface-container-low); }
+::-webkit-scrollbar-thumb { background: var(--md-sys-color-outline-variant); }
+::-webkit-scrollbar-thumb:hover { background: var(--md-sys-color-outline); }
