@@ -104,7 +104,6 @@
 }
 
 
-@keyframes beat{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
 /* ============================================================
    SITE — navigation, sections, atmosphere
    ============================================================ */
@@ -373,20 +372,6 @@ h2.sh{font-size:clamp(26px,3.4vw,40px);font-weight:500;letter-spacing:-.01em;lin
   margin-top:clamp(36px,5vw,52px);
   background:transparent;border:none;box-shadow:none;border-radius:0;
 }
-.phead{
-  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
-  padding:0 0 12px;border-bottom:none;background:transparent;justify-content:flex-end;
-}
-
-.phead .pt{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:500;
-  letter-spacing:.06em;text-transform:uppercase;color:var(--md-on-surface-variant)}
-#demo .phead .pt{display:none}   /* the section heading already introduces this */
-.phead .pt .live{width:6px;height:6px;border-radius:50%;background:var(--ok);
-  box-shadow:0 0 10px var(--ok);animation:beat 2.4s infinite}
-/* The prototype is a real app, so it is hosted in an iframe rather than
-   reimplemented. It lays itself out from its own viewport, so the frame is
-   sized to the space available and the app renders 1:1 — no transform, no
-   blurred upscaling. It only scales below the width its layout needs. */
 .demoframe{
   position:relative;width:100%;overflow:hidden;
   background:transparent;border-top:none;
@@ -449,20 +434,6 @@ h2.sh{font-size:clamp(26px,3.4vw,40px);font-weight:500;letter-spacing:-.01em;lin
   .demosmall{display:block}
 }
 
-/* MD3 text button in the panel header */
-.pgo{
-  position:relative;overflow:hidden;isolation:isolate;
-  display:inline-flex;align-items:center;gap:8px;text-decoration:none;
-  min-height:36px;padding:0 16px;border-radius:999px;
-  font-size:13px;font-weight:500;letter-spacing:.01em;color:var(--md-primary);
-  transition:color var(--md-dur) var(--md-ease),transform var(--md-dur-fast) var(--md-ease);
-}
-.pgo::before{content:"";position:absolute;inset:0;z-index:-1;background:currentColor;
-  opacity:0;transition:opacity var(--md-dur-fast) var(--md-ease)}
-.pgo:hover::before{opacity:.10}
-.pgo:active{transform:scale(.96)}
-.pgo svg{display:block;transition:transform var(--md-dur) var(--md-ease)}
-.pgo:hover svg{transform:translate(2px,-2px)}
 
 /* footer */
 footer{position:relative;z-index:2;padding:48px 0 60px;
@@ -501,10 +472,6 @@ footer{position:relative;z-index:2;padding:48px 0 60px;
 @media (max-width:900px){
   .cards{grid-template-columns:1fr}
   .card .vis{height:130px}
-}
-@media (max-width:760px){
-  #flow{display:none !important}       /* the rail cannot shrink; status line narrates instead */
-  .phead{justify-content:center}
 }
 @media (max-width:640px){
   #nav{gap:6px;padding:7px 8px 7px 12px}
@@ -739,17 +706,6 @@ footer{position:relative;z-index:2;padding:48px 0 60px;
     <p class="lede rv">No internet on either side. Press <b>Pay</b> and watch ₹500 hop over BLE to settlement.</p>
 
     <div class="panel rv">
-      <div class="phead">
-        <div class="pt"><span class="live"></span>Live prototype</div>
-        <a class="pgo" href="/demo/" target="_blank" rel="noopener">
-          Open full screen
-          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <path d="M6 3h7v7M13 3 3.5 12.5" stroke="currentColor" stroke-width="1.6"
-                  stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </a>
-      </div>
-
       <div class="demoframe" id="demoFrame">
         <iframe id="demoApp" title="BouncePay offline payment prototype"
                 data-src="/demo/index.html" loading="lazy"></iframe>
