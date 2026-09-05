@@ -151,3 +151,10 @@ html, body {
 .is-embedded .md-blur-shape-3 {
   display: none;
 }
+
+/* MD3 prefers tonal surfaces over outlines for separation; inside the page the
+   column borders read as frames-within-a-frame, so they come off. */
+.is-embedded .col-network,
+.is-embedded .col-result {
+  border-color: transparent;
+}

@@ -369,17 +369,18 @@ h2.sh{font-size:clamp(26px,3.4vw,40px);font-weight:500;letter-spacing:-.01em;lin
 }
 
 /* ── DEMO ────────────────────────────────────────────────────────────── */
-.panel{ /* extra-extra-large radius: this is the hero container of the page */
-  margin-top:clamp(36px,5vw,52px);border-radius:var(--md-r-xxl);overflow:hidden;
-  background:var(--md-surface-container);border:none;box-shadow:var(--md-elev-3);
-  transition:background var(--md-dur) var(--md-ease),box-shadow var(--md-dur) var(--md-ease);
+.panel{ /* no chrome: the prototype should read as page content, not a card */
+  margin-top:clamp(36px,5vw,52px);
+  background:transparent;border:none;box-shadow:none;border-radius:0;
 }
 .phead{
   display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
-  padding:14px 14px 14px 22px;border-bottom:1px solid var(--md-outline-variant);
+  padding:0 0 12px;border-bottom:none;background:transparent;justify-content:flex-end;
 }
+
 .phead .pt{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:500;
   letter-spacing:.06em;text-transform:uppercase;color:var(--md-on-surface-variant)}
+#demo .phead .pt{display:none}   /* the section heading already introduces this */
 .phead .pt .live{width:6px;height:6px;border-radius:50%;background:var(--ok);
   box-shadow:0 0 10px var(--ok);animation:beat 2.4s infinite}
 /* The prototype is a real app, so it is hosted in an iframe rather than
@@ -388,7 +389,7 @@ h2.sh{font-size:clamp(26px,3.4vw,40px);font-weight:500;letter-spacing:-.01em;lin
    blurred upscaling. It only scales below the width its layout needs. */
 .demoframe{
   position:relative;width:100%;overflow:hidden;
-  background:transparent;border-top:1px solid var(--md-outline-variant);
+  background:transparent;border-top:none;
 }
 .demoframe iframe{
   position:absolute;top:0;left:0;display:block;border:0;
@@ -858,7 +859,9 @@ function fitDemo() {
   const w = demoFrame.clientWidth;
   // leave room for the nav, the panel header and some breathing space, so the
   // whole console is on screen at 100% zoom without scrolling inside it
-  const h = Math.round(Math.min(760, Math.max(440, innerHeight - 310)));
+  // 570 is the floor at which the prototype's columns stop clipping once a
+  // payment has settled and the merchant panel has filled out; 580 for margin
+  const h = Math.round(Math.min(780, Math.max(580, innerHeight - 300)));
 
   if (w >= APP_MIN_W) {                 // render at 1:1
     demoApp.style.width = w + "px";
