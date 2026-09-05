@@ -382,17 +382,17 @@ h2.sh{font-size:clamp(26px,3.4vw,40px);font-weight:500;letter-spacing:-.01em;lin
   letter-spacing:.06em;text-transform:uppercase;color:var(--md-on-surface-variant)}
 .phead .pt .live{width:6px;height:6px;border-radius:50%;background:var(--ok);
   box-shadow:0 0 10px var(--ok);animation:beat 2.4s infinite}
-/* The prototype is a real app, so it is hosted in an iframe and scaled to
-   the panel rather than reimplemented. Logical viewport is fixed so the
-   three-panel layout never collapses; JS maps it onto the panel width. */
+/* The prototype is a real app, so it is hosted in an iframe rather than
+   reimplemented. It lays itself out from its own viewport, so the frame is
+   sized to the space available and the app renders 1:1 — no transform, no
+   blurred upscaling. It only scales below the width its layout needs. */
 .demoframe{
   position:relative;width:100%;overflow:hidden;
-  background:var(--md-surface);border-top:1px solid var(--md-outline-variant);
+  background:transparent;border-top:1px solid var(--md-outline-variant);
 }
 .demoframe iframe{
   position:absolute;top:0;left:0;display:block;border:0;
-  width:1360px;height:860px;transform-origin:top left;
-  background:var(--md-surface);
+  transform-origin:top left;background:transparent;
 }
 .demoframe .ph{ /* placeholder until the app is scrolled into view */
   position:absolute;inset:0;display:grid;place-items:center;gap:14px;
@@ -408,8 +408,13 @@ h2.sh{font-size:clamp(26px,3.4vw,40px);font-weight:500;letter-spacing:-.01em;lin
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* the demo earns a wider column than the prose */
+/* the demo earns a wider column than the prose, and less air above it so the
+   heading and the console share one screen at 100% zoom */
 .wrap.wide{max-width:1460px}
+#demo{padding-top:clamp(48px,5vh,76px)}
+#demo .eyebrow{margin-bottom:16px}
+#demo .lede{margin-top:12px}
+#demo .panel{margin-top:clamp(20px,2.4vw,30px)}
 
 /* Below the breakpoint the console cannot scale down and stay legible,
    so it is replaced by a still and a direct route into the real thing. */
@@ -730,10 +735,7 @@ footer{position:relative;z-index:2;padding:48px 0 60px;
   <div class="wrap wide">
     <span class="eyebrow rv">Demo</span>
     <h2 class="sh rv">The working prototype.</h2>
-    <p class="lede rv">A customer pays ₹500 with no internet on either side. The signed packet
-      hops over BLE through nearby phones until a connected device carries it to settlement —
-      seven steps, end to end. Switch to <b>Direct BLE</b> to see the merchant paid in one hop.
-      It is live below; press <b>Pay</b> and watch it run.</p>
+    <p class="lede rv">No internet on either side. Press <b>Pay</b> and watch ₹500 hop over BLE to settlement.</p>
 
     <div class="panel rv">
       <div class="phead">
@@ -848,14 +850,27 @@ const rev = new IntersectionObserver(es => {
 $$(".rv").forEach(n => rev.observe(n));
 
 /* ── demo: mount the prototype and map it onto the panel ──────────── */
-const APP_W = 1360, APP_H = 860;
+const APP_MIN_W = 1180;                 // narrowest the 3-panel layout holds
 const demoFrame = $("#demoFrame"), demoApp = $("#demoApp");
 
 function fitDemo() {
   if (!demoFrame || !demoApp || !demoFrame.clientWidth) return;
-  const scale = demoFrame.clientWidth / APP_W;
-  demoApp.style.transform = `scale(${scale})`;
-  demoFrame.style.height = Math.round(APP_H * scale) + "px";
+  const w = demoFrame.clientWidth;
+  // leave room for the nav, the panel header and some breathing space, so the
+  // whole console is on screen at 100% zoom without scrolling inside it
+  const h = Math.round(Math.min(760, Math.max(440, innerHeight - 310)));
+
+  if (w >= APP_MIN_W) {                 // render at 1:1
+    demoApp.style.width = w + "px";
+    demoApp.style.height = h + "px";
+    demoApp.style.transform = "none";
+  } else {                              // too narrow: scale the minimum layout
+    const scale = w / APP_MIN_W;
+    demoApp.style.width = APP_MIN_W + "px";
+    demoApp.style.height = Math.round(h / scale) + "px";
+    demoApp.style.transform = `scale(${scale})`;
+  }
+  demoFrame.style.height = h + "px";
 }
 
 const EMBED_MIN = 900;
@@ -866,7 +881,12 @@ if (demoFrame && demoApp) {
   addEventListener("resize", fitDemo);
   if (window.ResizeObserver) new ResizeObserver(fitDemo).observe(demoFrame);
   demoApp.addEventListener("load", () => {
-    if (demoApp.src) demoFrame.classList.add("ready");
+    if (!demoApp.src) return;
+    try {                               // same-origin, so this is safe
+      demoApp.contentDocument.documentElement.classList.add("is-embedded");
+    } catch (e) { /* if it ever moves cross-origin, just show it as-is */ }
+    demoFrame.classList.add("ready");
+    fitDemo();
   });
   // only fetch the app once the section is actually approaching the viewport
   const mount = new IntersectionObserver((es, o) => {
