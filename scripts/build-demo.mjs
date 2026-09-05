@@ -9,7 +9,7 @@
  * Run with: npm run build:demo
  */
 import { execSync } from 'node:child_process';
-import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -36,7 +36,28 @@ execSync(
 copyFileSync(themeSrc, resolve(outDir, THEME_FILE));
 console.log(`• Copied ${THEME_FILE}`);
 
+// The terminal's device id repeats across the merchant panel and adds nothing
+// at a glance, so it is stripped from the markup and from the strings the app
+// builds at runtime. Done post-build so a rebuild cannot reintroduce it.
+const NOISE = [' (POS #BP-01)', ' • POS #BP-01'];
+const stripNoise = (file) => {
+  let text = readFileSync(file, 'utf8');
+  let hits = 0;
+  for (const phrase of NOISE) {
+    while (text.includes(phrase)) { text = text.replace(phrase, ''); hits++; }
+  }
+  if (hits) { writeFileSync(file, text, 'utf8'); }
+  return hits;
+};
+
 const indexPath = resolve(outDir, 'index.html');
+const assetsDir = resolve(outDir, 'assets');
+const jsFiles = existsSync(assetsDir)
+  ? readdirSync(assetsDir).filter(f => f.endsWith('.js')).map(f => resolve(assetsDir, f))
+  : [];
+const stripped = [indexPath, ...jsFiles].reduce((n, f) => n + stripNoise(f), 0);
+console.log(`• Stripped ${stripped} device-id reference(s)`);
+
 let html = readFileSync(indexPath, 'utf8');
 
 if (html.includes(THEME_FILE)) {
