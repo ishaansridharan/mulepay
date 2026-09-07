@@ -85,6 +85,14 @@
   color: var(--md-sys-color-on-primary);
 }
 
+.node-circle-bubble,
+.ddc-icon {
+  font-family: var(--font-roboto, "Roboto", sans-serif) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+
 /* Sticky app header: was a translucent light surface. */
 .bp-header {
   background: rgba(33, 31, 38, .92);
@@ -105,10 +113,14 @@
   box-shadow: 0 0 0 2px rgba(208, 188, 255, .35);
 }
 
-/* The prototype paints its own page background; let it sit flush inside the
-   section's panel instead of drawing a second surface on top of it. */
-html, body {
-  background-color: var(--md-sys-color-background);
+/* The prototype canvas is completely transparent so it sits flush inside the
+   page atmosphere with zero black box or clipping boundary. */
+html,
+body,
+.bp-app,
+.bp-grid {
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 /* Scrollbars, so the embedded console does not show light-mode furniture. */
@@ -126,8 +138,13 @@ html, body {
    The full-screen route keeps its own header untouched.
    ========================================================================== */
 
-.is-embedded body {
-  background: transparent;                 /* the section's panel shows through */
+.is-embedded,
+.is-embedded html,
+.is-embedded body,
+.is-embedded .bp-app,
+.is-embedded .bp-grid {
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 .is-embedded .bp-brand-card {
@@ -136,20 +153,22 @@ html, body {
 
 .is-embedded .bp-header {
   justify-content: flex-end;
-  background: transparent;
-  border-bottom: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  background: transparent !important;
+  border-bottom: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   padding-top: 4px;
   padding-bottom: 4px;
   min-height: 0;
 }
 
 /* the page has its own atmosphere; a second set of blur shapes muddies it */
+.md-ambient-layer,
+.is-embedded .md-ambient-layer,
 .is-embedded .md-blur-shape-1,
 .is-embedded .md-blur-shape-2,
 .is-embedded .md-blur-shape-3 {
-  display: none;
+  display: none !important;
 }
 
 /* MD3 prefers tonal surfaces over outlines for separation; inside the page the
@@ -157,6 +176,34 @@ html, body {
 .is-embedded .col-network,
 .is-embedded .col-result {
   border-color: transparent;
+}
+
+/* Ensure the route track cards fit properly with clean margins and no edge clipping */
+.col-network,
+.is-embedded .col-network {
+  overflow: visible !important;
+}
+
+.route-track-container {
+  overflow: visible !important;
+}
+
+.route-nodes-list {
+  padding-right: 12px !important;
+  box-sizing: border-box;
+}
+
+.route-node-item.active .node-card-content {
+  transform: none !important;
+}
+
+.node-card-content {
+  margin-right: 4px;
+}
+
+/* Remove dashboard-style step ticker card */
+.step-ticker-card {
+  display: none !important;
 }
 
 /* --------------------------------------------------------------------------
@@ -186,4 +233,148 @@ html, body {
 }
 .is-embedded #heroBalanceGrid {
   grid-template-columns: 1fr;
+}
+
+/* ==========================================================================
+   ENHANCED MONEY HOPPING & ROUTE TRACK MECHANICS
+/* ==========================================================================
+   ENHANCED MONEY HOPPING & ROUTE TRACK MECHANICS (CLEAN & SOLID)
+   ========================================================================== */
+
+/* 1. Track Rail: Solid green line, perfect termination at circle 5 center */
+.route-rail-line {
+  position: absolute;
+  top: 21px;
+  bottom: 21px;
+  left: 21px;
+  width: 2px;
+  transform: translate(-50%);
+  background: rgba(255, 255, 255, 0.15) !important;
+  z-index: 1;
+}
+
+.route-rail-active {
+  position: absolute;
+  top: 21px;
+  left: 21px;
+  width: 3px;
+  transform: translate(-50%);
+  /* Stop precisely at the center of Node 5 (bottom: 21px) - eliminates overshoot */
+  max-height: calc(100% - 42px) !important;
+  border-radius: 999px !important;
+  background: #22C55E !important;
+  box-shadow: none !important;
+  z-index: 2;
+  transition: height 0.65s cubic-bezier(0.34, 1.45, 0.64, 1) !important;
+}
+
+/* Direct BLE Active Rail: Solid green */
+.direct-rail-active {
+  max-height: 100% !important;
+  border-radius: 999px !important;
+  background: #22C55E !important;
+  box-shadow: none !important;
+  transition: height 0.75s cubic-bezier(0.34, 1.45, 0.64, 1) !important;
+}
+
+/* 2. Traveling Money Packet: Clean solid yellow, legible, not overdone */
+.traveling-packet-pill {
+  position: absolute;
+  left: 21px;
+  transform: translate(-50%, -50%);
+  background: #FACC15 !important;
+  color: #000000 !important;
+  font-family: var(--font-roboto, sans-serif) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  padding: 3px 9px !important;
+  border-radius: 999px !important;
+  border: none !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+  z-index: 10;
+  pointer-events: none;
+  white-space: nowrap;
+  transition: top 0.65s cubic-bezier(0.34, 1.45, 0.64, 1),
+              opacity 0.25s ease !important;
+}
+
+.traveling-packet-pill.visible {
+  opacity: 1 !important;
+}
+
+/* 3. Settlement Absorption: Once payment settles (Step 7), cleanly absorb packet into Node 5 */
+.route-nodes-list:has(#nodeBackend.completed) #travelingPacket,
+#travelingPacket.settled-absorbed {
+  opacity: 0 !important;
+  transform: translate(-50%, -50%) scale(0.2) !important;
+  transition: top 0.65s cubic-bezier(0.34, 1.45, 0.64, 1),
+              opacity 0.25s ease !important;
+}
+
+/* 4. Clean, 100% solid color node circles */
+.node-circle-bubble {
+  background: #26242E !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.2) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-family: var(--font-roboto, sans-serif) !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Active and completed nodes: Solid green circles with crisp black numbers */
+.route-node-item.active .node-circle-bubble,
+.route-node-item.completed .node-circle-bubble,
+#nodeCustomer.active .node-circle-bubble,
+#nodeCustomer.completed .node-circle-bubble,
+#nodeRelay1.active .node-circle-bubble,
+#nodeRelay1.completed .node-circle-bubble,
+#nodeRelay2.active .node-circle-bubble,
+#nodeRelay2.completed .node-circle-bubble,
+#nodeGateway.active .node-circle-bubble,
+#nodeGateway.completed .node-circle-bubble,
+#nodeBackend.active .node-circle-bubble,
+#nodeBackend.completed .node-circle-bubble {
+  background: #22C55E !important;
+  border: 1.5px solid #22C55E !important;
+  color: #000000 !important;
+  font-weight: 800 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Node 4 (Gateway): Clean solid node styling */
+#nodeGateway.active .node-card-content {
+  border-color: rgba(34, 197, 94, 0.5) !important;
+  background: rgba(34, 197, 94, 0.08) !important;
+}
+
+/* Node 5 (Backend): Solid green completed */
+#nodeBackend.completed .node-card-content {
+  border-color: rgba(34, 197, 94, 0.5) !important;
+  background: rgba(34, 197, 94, 0.08) !important;
+}
+#nodeBackend.completed .node-step-tag {
+  background: #16A34A !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+/* Completed nodes maintain clean solid green tag */
+.route-node-item.completed .node-card-content {
+  border-color: rgba(34, 197, 94, 0.35) !important;
+}
+.route-node-item.completed .node-step-tag {
+  background: rgba(34, 197, 94, 0.2) !important;
+  color: #4ADE80 !important;
+}
+
+/* Direct Token Card (P2P BLE transfer mode): Clean, solid */
+.direct-token-card {
+  border: 1.5px solid #22C55E !important;
+  background: rgba(22, 20, 26, 0.95) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+  transition: top 0.75s cubic-bezier(0.34, 1.45, 0.64, 1), opacity 0.3s ease !important;
 }

@@ -1,22 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BouncePay — Offline-First Material You Payment Network</title>
-  <meta name="description" content="BouncePay keeps digital payments functioning during Internet outages using Bluetooth Low Energy (BLE) store-and-forward mesh routing." />
+  <meta name="description"
+    content="BouncePay keeps digital payments functioning during Internet outages using Bluetooth Low Energy (BLE) store-and-forward mesh routing." />
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
 
   <!-- Google Fonts: Roboto (Material Design 3 Canonical Typeface) & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Roboto:wght@400;500;700&display=swap"
+    rel="stylesheet" />
 
   <!-- Stylesheets -->
   <script type="module" crossorigin src="./assets/index-EEqA8Ngc.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-C26Vj9Rx.css">
   <link rel="stylesheet" href="./theme-dark.css" />
 </head>
+
 <body>
   <!-- Atmospheric Material You Layer: Organic Layered Blur Shapes -->
   <div class="md-ambient-layer" aria-hidden="true">
@@ -26,7 +31,7 @@
   </div>
 
   <div class="bp-app">
-    
+
     <header class="bp-header">
       <!-- Prominent Brand Title Card (Wider, Higher Authority, Clear Resilience Messaging) -->
       <div class="bp-brand-card">
@@ -36,7 +41,8 @@
           <span class="bp-badge-context">FAILOVER ON INTERNET OUTAGES</span>
         </div>
         <div class="bp-brand-subtitle">
-          Payment resilience during network failure: Authenticates offline transactions over BLE & routes via store-and-forward mesh until internet settlement.
+          Payment resilience during network failure: Authenticates offline transactions over BLE & routes via
+          store-and-forward mesh until internet settlement.
         </div>
       </div>
 
@@ -50,10 +56,12 @@
 
         <!-- Demo Mode Navigation Toggle (Pill Buttons) -->
         <div class="bp-header-actions">
-          <button id="btnHeroDemo" class="btn-hero-demo active" title="Run store-and-forward mesh sequence" type="button">
+          <button id="btnHeroDemo" class="btn-hero-demo active" title="Run store-and-forward mesh sequence"
+            type="button">
             <span class="btn-text-content">STORE & FORWARD</span>
           </button>
-          <button id="btnDirectDemo" class="btn-hero-demo btn-direct-nav" title="Demonstrate direct point-to-point BLE payment" type="button">
+          <button id="btnDirectDemo" class="btn-hero-demo btn-direct-nav"
+            title="Demonstrate direct point-to-point BLE payment" type="button">
             <span class="btn-text-content">DIRECT BLE</span>
           </button>
           <button id="btnReset" class="btn-icon-minimal" title="Reset Prototype" type="button">
@@ -65,13 +73,13 @@
 
     <!-- Main Presentation 3-Column Layout -->
     <main class="bp-grid">
-      
+
       <!-- =================================================================
            LEFT COLUMN: iQOO PHONE (Customer Payment Device)
            ================================================================= -->
       <section class="col-phone" aria-label="Customer Payment Phone">
         <div class="device-caption-label">
-          CUSTOMER DEVICE • OFFLINE (iQOO 12 PRO)
+          CUSTOMER DEVICE • OFFLINE (iQOO PHONE)
         </div>
 
         <div class="iqoo-phone-frame">
@@ -107,16 +115,17 @@
                   <button class="p-chip active" data-amt="500" type="button">₹500</button>
                   <button class="p-chip" data-amt="1000" type="button">₹1,000</button>
                 </div>
-                
+
                 <div class="phone-offline-balance-row">
                   <span class="phone-balance-label">Offline Balance</span>
                   <span class="phone-balance-val" id="phoneBalanceVal">₹2,000</span>
-                  <button id="btnTopupQuota" class="btn-topup-quota" style="display: none;" type="button">+ Reload ₹2,000 Quota</button>
+                  <button id="btnTopupQuota" class="btn-topup-quota" style="display: none;" type="button">+ Reload
+                    ₹2,000 Quota</button>
                 </div>
 
                 <!-- Funds Warning Box -->
                 <div id="fundsWarningBox" class="funds-warning-box">
-                  <span>⚠️</span>
+                  <span style="font-weight: 700;">!</span>
                   <span id="fundsWarningText">Funds not available</span>
                 </div>
               </div>
@@ -142,7 +151,7 @@
                 </div>
 
                 <div class="ptc-transferring-pulse">
-                  <span class="ble-signal-waves">📡</span>
+                  <span class="ble-signal-waves">●</span>
                   <span>Anonymized BLE Broadcast</span>
                 </div>
               </div>
@@ -174,7 +183,7 @@
       <section class="col-network" aria-label="Payment Route and BLE Connection">
         <div class="network-header-row">
           <h2 class="network-title" id="centerPanelTitle">STORE & FORWARD MESH ROUTING</h2>
-          
+
           <div id="networkBadge" class="network-status-badge offline">
             <span class="pulse-indicator offline" id="netPulseDot"></span>
             <span id="netBadgeText">INTERNET OFFLINE</span>
@@ -194,7 +203,7 @@
 
             <!-- Node 1: Customer -->
             <div id="nodeCustomer" class="route-node-item active" data-step="1">
-              <div class="node-circle-bubble">📱</div>
+              <div class="node-circle-bubble">1</div>
               <div class="node-card-content">
                 <div class="node-header-line">
                   <span class="node-primary-title">Customer</span>
@@ -206,7 +215,7 @@
 
             <!-- Node 2: Relay 01 -->
             <div id="nodeRelay1" class="route-node-item" data-step="3">
-              <div class="node-circle-bubble">📲</div>
+              <div class="node-circle-bubble">2</div>
               <div class="node-card-content">
                 <div class="node-header-line">
                   <span class="node-primary-title">Relay 01</span>
@@ -218,7 +227,7 @@
 
             <!-- Node 3: Relay 02 -->
             <div id="nodeRelay2" class="route-node-item" data-step="4">
-              <div class="node-circle-bubble">📲</div>
+              <div class="node-circle-bubble">3</div>
               <div class="node-card-content">
                 <div class="node-header-line">
                   <span class="node-primary-title">Relay 02</span>
@@ -230,7 +239,7 @@
 
             <!-- Node 4: Internet Gateway -->
             <div id="nodeGateway" class="route-node-item" data-step="5">
-              <div class="node-circle-bubble">🌐</div>
+              <div class="node-circle-bubble">4</div>
               <div class="node-card-content">
                 <div class="node-header-line">
                   <span class="node-primary-title">Internet Gateway</span>
@@ -242,7 +251,7 @@
 
             <!-- Node 5: BouncePay Backend -->
             <div id="nodeBackend" class="route-node-item" data-step="6">
-              <div class="node-circle-bubble">🏦</div>
+              <div class="node-circle-bubble">5</div>
               <div class="node-card-content">
                 <div class="node-header-line">
                   <span class="node-primary-title">BouncePay Backend</span>
@@ -258,7 +267,7 @@
         <div id="directBleView" class="direct-ble-container" style="display: none;">
           <!-- Top Customer Device -->
           <div class="direct-device-card customer" id="dNodeCustomer">
-            <div class="ddc-icon">📱</div>
+            <div class="ddc-icon">1</div>
             <div class="ddc-info">
               <div class="ddc-name">iQOO CUSTOMER</div>
               <div class="ddc-role">Primary Payment Device • BLE Active</div>
@@ -269,7 +278,7 @@
           <div class="direct-connection-rail">
             <div class="direct-rail-line"></div>
             <div class="direct-rail-active" id="directRailActive"></div>
-            
+
             <div class="direct-ble-pill">
               <span class="ble-pulse-dot"></span>
               <span>Bluetooth Direct Channel</span>
@@ -279,7 +288,7 @@
             <div id="directTokenCard" class="direct-token-card">
               <div class="dtc-header">
                 <span class="dtc-title">BOUNCEPAY TOKEN</span>
-                <span class="dtc-lock">🔒</span>
+                <span class="dtc-lock">SECURE</span>
               </div>
               <div class="dtc-body">
                 <div class="dtc-amount" id="dtcAmountDisplay">₹500</div>
@@ -293,7 +302,7 @@
 
           <!-- Bottom Merchant Device -->
           <div class="direct-device-card merchant" id="dNodeMerchant">
-            <div class="ddc-icon">📲</div>
+            <div class="ddc-icon">2</div>
             <div class="ddc-info">
               <div class="ddc-name">MERCHANT PHONE</div>
               <div class="ddc-role">Campus Stationery • Offline Receiving</div>
@@ -311,8 +320,8 @@
           </div>
         </div>
 
-        <!-- Step-by-Step State Progress Indicator (Pill Card) -->
-        <div class="step-ticker-card">
+        <!-- Step-by-Step State Progress Indicator (Hidden) -->
+        <div class="step-ticker-card" style="display: none !important;">
           <div id="stepNumber" class="step-num-badge">STEP 1 OF 7</div>
           <div id="stepDescription" class="step-desc-text">Ready to initiate payment</div>
         </div>
@@ -463,9 +472,26 @@
           </div>
         </div>
       </section>
-
     </main>
   </div>
 
+  <script>
+    // Seamless packet absorption into Backend on Step 7 (Settlement)
+    (function() {
+      const backendNode = document.getElementById('nodeBackend');
+      const packet = document.getElementById('travelingPacket');
+      if (!backendNode || !packet) return;
+
+      const observer = new MutationObserver(function() {
+        if (backendNode.classList.contains('completed')) {
+          packet.classList.add('settled-absorbed');
+        } else {
+          packet.classList.remove('settled-absorbed');
+        }
+      });
+      observer.observe(backendNode, { attributes: true, attributeFilter: ['class'] });
+    })();
+  </script>
 </body>
+
 </html>
